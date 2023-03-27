@@ -5,13 +5,20 @@ File for class that represents a game (state) of poker
 """
 import random
 from typing import Optional, Any
-import Player
 
 # ARE WE COMFORTABLE WITH USING TUPLES FOR HANDS? WE ARE GONNA NEED TO PARSE THE DATA INTO INTEGERS ANYWAYS BECAUSE
 # WE NEED TO TURN CARDS INTO ARRAY INDICIES FOR AN IMAGE ARRAY, WHICH IMAGES WILL BE STORED IN.
 
 # card is either a tuple of 2 integers, or is a dataclass with two integers; MoveClasses is temporary
-Card = tuple[int, int], MoveClasses = tuple[int, int]
+Card = tuple[int, int]
+MoveClasses = tuple[int, int]
+
+NUM_TO_RANK = {1: 'Ace', 11: 'Jack', 12: 'Queen', 13: 'King'}
+for i in range(2, 11):
+    NUM_TO_RANK[i] = str(i)
+NUM_TO_SUIT = {1: 'Spades', 2: 'Hearts', 3: 'Clubs', 4: 'Diamonds'}
+NUM_TO_POKER_HAND = {1: 'Royal Flush', 2: 'Straight Flush', 3: 'Four of a Kind', 4: 'Full House',
+                     5: 'Flush', 6: 'Straight', 7: 'Three of a Kind', 8: 'Two Pair', 9: 'Pair', 10: 'High Card'}
 
 
 class PokerGame:
@@ -26,15 +33,20 @@ class PokerGame:
     - last_bet: last amount of money bet
     - community_cards: Tuples? representing the community cards visible to the players
     - stage: integer representing what stage of the game is being represented (although it could be inferred)
+    - turn: integer representing player # that has to make a move
     """
     player1_hand: set[Card]
     player2_hand: set[Card]
     player1_moves: list[MoveClasses]
     player2_moves: list[MoveClasses]
+    player1_poker_hand: str
+    player2_poker_hand: str
     pool: int
     last_bet: int
-    community_cards: Optional[set[Card]]
+    community_cards: set[Card]
     stage: int
+    turn: int
+    winner: Optional[int]
 
     def __init__(self) -> None:
         self.pool = 0
@@ -44,12 +56,39 @@ class PokerGame:
         self.player2_hand = set()
         self.player1_moves = []
         self.player2_moves = []
-        self.community_cards = None
+        self.community_cards = set()
+        self.turn = 0
+        self.winner = None
 
-    def run_move(self) -> None:
-        return
+    def __str__(self) -> str:
+        output_msg = f'Player 1 Hand: {[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.player1_hand]} - {self.player1_poker_hand}\n'
+        output_msg += f'Player 2 Hand: {[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.player2_hand]} - {self.player2_poker_hand}\n'
+        output_msg += f'Community Cards: {[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.community_cards]}\n'
+        return output_msg
+
+    def run_move(self, move: tuple[int, int]) -> None:
+        """
+
+        """
+        # add appropriate move to move sequence
+        if self.turn == 0:
+            self.player1_moves.append(move)
+        else:
+            self.player2_moves.append(move)
+
+        # add raise amount
+        if self.last_bet != move[1]:
+            self.last_bet += move[1]
+        if move[1] > 0:
+            self.pool += move[1]
+
+        self.turn = (self.turn + 1) % 2
+
 
     def next_stage(self) -> None:
+        """
+        Moves onto the next stage of a poker game and makes the nessecary adjustments to the 'game state'
+        """
         if self.stage == 0:
             for _ in range(2):
                 self.player1_hand.add(self._pick_card())
@@ -60,21 +99,37 @@ class PokerGame:
         elif 1 < self.stage < 4:
             self.community_cards.add(self._pick_card())
         elif self.stage == 4:
-            winner = self.check_winner(False)
-            print(f'Player {winner} has won the game!')
+            self.winner = self.check_winner()
         else:
-            raise ValueError
+            return
 
         self.stage += 1
 
     def _pick_card(self) -> Card:
+        """
+        Generates a random card that remains in the deck
+        """
         card = (random.randint(1, 13), random.randint(1, 4))
         while card in self.community_cards or card in self.player1_hand or card in self.player2_hand:
             card = (random.randint(1, 13), random.randint(1, 4))
 
         return card
 
-    def check_winner(self, all_in: bool) -> Optional[int]:
+    def check_winner(self, all_in: bool = False) -> Optional[int]:
+        """
+        Checks who the winner is
+        """
+        if self.winner is not None:
+            return self.winner
+
+        # check for folds
+        if len(self.player1_moves) > 0 and self.player1_moves[-1][0] == 2:
+            self.winner = 2
+            return self.winner
+        if len(self.player2_moves) > 0 and self.player2_moves[-1][0] == 2:
+            self.winner = 2
+            return self.winner
+
         if all_in:
             while len(self.community_cards) < 5:
                 self.community_cards.add(self._pick_card())
@@ -83,8 +138,11 @@ class PokerGame:
         if self.stage == 4:
             p1_score = self._rank_poker_hand(self.player1_hand)
             p2_score = self._rank_poker_hand(self.player2_hand)
+            self.player1_poker_hand = NUM_TO_POKER_HAND[p1_score[0]]
+            self.player2_poker_hand = NUM_TO_POKER_HAND[p2_score[0]]
 
-            return self._determine_winner(p1_score, p2_score)
+            self.winner = self._determine_winner(p1_score, p2_score)
+            return self.winner
         else:
             return None
 
@@ -124,8 +182,7 @@ class PokerGame:
             else:
                 return self._check_kickers(p1_score[1], p2_score[1], 5, [])
 
-        return 1 if p1_score[0] > p2_score[0] else 2
-
+        return 1 if p1_score[0] < p2_score[0] else 2
 
     def _check_kickers(self, p1_cards: list[Card], p2_cards: list[Card], kickers_allowed: int,
                        blackist: list[int]) -> int:
@@ -151,7 +208,8 @@ class PokerGame:
         is_flush = self._check_flush(all_cards)
         is_straight = self._check_straight(all_cards)
         rank_counts = self._count_ranks(all_cards)
-        reversed_cards = all_cards.reverse()
+        reversed_cards = all_cards.copy()
+        reversed_cards.reverse()
 
         if self._check_ryl_flush(all_cards):
             return (1, -1) # not possible for two players to have royal flush; ignore tie
@@ -172,6 +230,8 @@ class PokerGame:
         elif len(rank_counts[2]) > 0:
             return (9, rank_counts[2], reversed_cards)
         else:
+            if reversed_cards[-1][0] == 1:
+                reversed_cards.insert(0, (14, reversed_cards[len(reversed_cards) - 1][1])) # make aces the highest
             return (10, reversed_cards)
 
     # this function is redundant; the straight flush function does the same thing
@@ -190,7 +250,6 @@ class PokerGame:
 
         return counter == 3 and (1, list(possible_suits)[0]) in cards # checks for the corresponding ace
 
-
     def _check_straight_flush(self, cards: list[Card]) -> tuple[bool, int]:
         suit_counts = {i: [] for i in range(1, 5)}
         for card in cards:
@@ -203,7 +262,6 @@ class PokerGame:
                 break
 
         return self._check_straight(suit_counts[suit]) if suit != 0 else (False, -1)
-
 
     def _check_straight(self, cards: list[Card]) -> tuple[bool, int]:
         temp_cards = cards.copy()
@@ -231,7 +289,6 @@ class PokerGame:
 
         return (counter == 4, temp_cards[counting_from + counter + dupes + 1][0])
 
-
     def _check_flush(self, cards: list[Card]) -> tuple[bool, list[Card]]:
         suit_counts = {i: [] for i in range(1, 5)}
         for card in cards:
@@ -248,7 +305,6 @@ class PokerGame:
 
         return (True, suit_counts[suit]) if suit != 0 else (False, -1)
 
-
     def _count_ranks(self, cards: list[Card]) -> dict[int, list[int]]:
         """
         Returns tuple representing # of doubles, triples, quadrouples respectively
@@ -261,18 +317,7 @@ class PokerGame:
         pattern_counts = {2: [], 3: [], 4: []}
         for i in range(14):
             if rank_counts[i] - 2 >= 0:
-                pattern_counts[rank_counts[i] - 2].append(i)
+                pattern_counts[rank_counts[i]].append(i)
         for i in range(2, 5):
             pattern_counts[i].reverse()
         return pattern_counts
-
-
-# def run_game(player1: Player.Player, player2: Player.Player) -> None:
-#     """
-#     Simulates a game of poker
-#     """
-#     dealer = random.randint(1, 2)
-#     game = PokerGame(player1, player2)
-#     turn_order = [player1 if dealer == 1 else player2, player2 if dealer == 1 else player1]
-#
-#     while game.check_winner() is None:
