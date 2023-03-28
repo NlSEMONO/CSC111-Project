@@ -260,7 +260,7 @@ class PokerGame:
 
         suit = 0
         for i in range(1, 5):
-            if len(suit_counts) >= 5:
+            if len(suit_counts[i]) >= 5:
                 suit = i
                 break
 
@@ -274,23 +274,23 @@ class PokerGame:
             i += 1
         counter = 0
         dupes = 0
-        counting_from = len(temp_cards) - 4
+        counting_from = len(temp_cards) - 5
         while counter < 4 and counting_from > -1:
-            if counter + counting_from + dupes + 1 >= 7:
+            if counter + counting_from + dupes + 1 >= len(temp_cards):
                 counter = 0
                 counting_from -= 1
                 dupes = 0
                 continue
-            if temp_cards[counting_from + counter + dupes][0] == temp_cards[counting_from + counter + 1][0] + 1:
+            if temp_cards[counting_from + counter + dupes][0] + 1 == temp_cards[counting_from + counter + dupes + 1][0]:
                 counter += 1
-            elif temp_cards[counting_from + counter][0] == temp_cards[counting_from + counter + 1][0]:
+            elif temp_cards[counting_from + dupes + counter][0] == temp_cards[counting_from + counter + dupes + 1][0]:
                 dupes += 1
             else:
                 counter = 0
                 counting_from -= 1
                 dupes = 0
 
-        return (counter == 4, temp_cards[counting_from + counter + dupes + 1][0])
+        return (counter == 4, temp_cards[counting_from + counter + dupes][0])
 
     def _check_flush(self, cards: list[Card]) -> tuple[bool, list[Card]]:
         suit_counts = {i: [] for i in range(1, 5)}
@@ -299,7 +299,7 @@ class PokerGame:
 
         suit = 0
         for i in range(1, 5):
-            if len(suit_counts) >= 5:
+            if len(suit_counts[i]) >= 5:
                 suit = i
                 break
 

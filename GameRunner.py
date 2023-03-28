@@ -5,7 +5,7 @@ import random
 p1 = Player.CheckPlayer(100)
 p2 = Player.CheckPlayer(100)
 
-def run_round(player1: Player.Player, player2: Player.Player) -> None:
+def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
     """
     Simulates a round of poker
     """
@@ -29,5 +29,21 @@ def run_round(player1: Player.Player, player2: Player.Player) -> None:
             turn_order[1].bet_this_round = 0
 
     # print(f'{game.player1_moves} {game.player2_moves}')
+    # print(game)
+
+    return game
+
+
+for i in range(100):
+    game = run_round(p1, p2)
     print(f'Player {game.winner} has won the game!')
     print(game)
+
+
+"""
+test case for straight flush!
+
+game = PokerGame()
+game.community_cards = {(1, 1), (2, 1), (3, 1), (4, 1), (8, 4)}
+game._rank_poker_hand({(5, 1), (10, 2)})
+"""
