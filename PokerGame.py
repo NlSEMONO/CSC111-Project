@@ -214,7 +214,7 @@ class PokerGame:
         reversed_cards = all_cards.copy()
         reversed_cards.reverse()
 
-        if self._check_ryl_flush(all_cards):
+        if straight_flush[0] and straight_flush[1] == 14:
             return (1, -1) # not possible for two players to have royal flush; ignore tie
         elif straight_flush[0]:
             return (2, straight_flush[1]) # need to find highest part of the straight flush
@@ -236,22 +236,6 @@ class PokerGame:
             if reversed_cards[-1][0] == 1:
                 reversed_cards.insert(0, (14, reversed_cards[len(reversed_cards) - 1][1])) # make aces the highest
             return (10, reversed_cards)
-
-    # this function is redundant; the straight flush function does the same thing
-    def _check_ryl_flush(self, cards: list[Card]) -> bool:
-        possible_suits = {card[1] for card in cards if card[0] == 13}
-        kings = len(possible_suits)
-        counter = 0
-        while len(possible_suits) > 0 and counter < 3:
-            prev_card = cards[6 - kings - counter + 1]
-            curr_card = cards[6 - kings - counter]
-            if curr_card[0] == prev_card[0] + 1 and curr_card[1] in possible_suits:
-                counter += 1
-                possible_suits = {prev_card[1]}
-            else:
-                return False
-
-        return counter == 3 and (1, list(possible_suits)[0]) in cards # checks for the corresponding ace
 
     def _check_straight_flush(self, cards: list[Card]) -> tuple[bool, int]:
         suit_counts = {i: [] for i in range(1, 5)}

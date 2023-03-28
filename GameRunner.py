@@ -39,7 +39,6 @@ for i in range(100):
     print(f'Player {game.winner} has won the game!')
     print(game)
 
-
 """
 test case for straight flush!
 
