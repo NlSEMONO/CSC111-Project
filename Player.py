@@ -42,11 +42,7 @@ class Player:
         The move number correlates to the type of move the player makes.
         Bet is the bet amount.
         Moves:
-        1: fold
-        2: bet
-        3: raise
-        4: check
-        5: call
+
         """
         raise NotImplementedError
 
