@@ -10,7 +10,7 @@ class Player:
     Abstract class representing a player or a playstyle
     """
     bet_this_round: int
-    has_moved: bool
+    has_moved: bool #test
 
     def __init__(self) -> None:
         self.bet_this_round = 0
