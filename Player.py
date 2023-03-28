@@ -8,19 +8,95 @@ import PokerGame
 class Player:
     """
     Abstract class representing a player or a playstyle
+        bet_this_round -- how much the player has bet so far in this round.
+        balance
+        betting_percentage -- change for the player to bet "safely"
+        raising_percentage -- chance for the player to raise "safely"
+        has_moved
+        has_raised
+        has_folded
+        total_bluffs
+
+        NOTE: GAME TREE HAS NOT BEEN IMPLEMENTED ***
     """
     bet_this_round: int
+    balance: float
+    betting_percentage: Optional[float] = 25
+    raising_percentage: Optional[float] = 25
     has_moved: bool
+    has_raised: bool
+    has_folded: bool
+    total_bluffs: int
 
-    def __init__(self) -> None:
+    def __init__(self, balance: int) -> None:
         self.bet_this_round = 0
         self.has_moved = False
+        self.has_raised = False
+        self.has_folded = False
+        self.total_bluffs = 0
+        self.balance = balance
 
     def make_move(self, game_state: PokerGame) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
+        The move number correlates to the type of move the player makes.
+        Bet is the bet amount.
+        Moves:
+        1: fold
+        2: bet
+        3: raise
+        4: check
+        5: call
         """
         raise NotImplementedError
+
+    def win_probability(self, game_state: PokerGame) -> float:
+        """
+        Calculates current win probability given the information at hand.
+        """
+        raise NotImplementedError
+
+    def bet_size(self, game_state: PokerGame) -> float:
+        """
+        Calculates current bet size reasonable to the gamestate.
+        Calculate chance to "scare/provoke" opponents into making mistakes.
+        """
+        raise NotImplementedError
+
+    """
+    The following should be hard coded (I think idk)
+    I have not added them yet oops
+    """
+    def move_fold(self) -> None:
+        """
+        Player folds
+        """
+        raise NotImplementedError
+
+    def move_bet(self) -> None:
+        """
+        Player bets
+        """
+        raise NotImplementedError
+
+    def move_raise(self) -> None:
+        """
+        Player raises bet
+        """
+        raise NotImplementedError
+
+    def move_check(self) -> None:
+        """
+        Player checks
+        """
+        raise NotImplementedError
+
+    def move_call(self) -> None:
+        """
+        Player calls
+        """
+        raise NotImplementedError
+
 
 class CheckPlayer(Player):
     """
