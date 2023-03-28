@@ -42,11 +42,7 @@ class Player:
         The move number correlates to the type of move the player makes.
         Bet is the bet amount.
         Moves:
-        1: fold
-        2: bet
-        3: raise
-        4: check
-        5: call
+
         """
         raise NotImplementedError
 
@@ -71,31 +67,31 @@ class Player:
         """
         Player folds
         """
-        raise NotImplementedError
+        self.has_folded = True
 
-    def move_bet(self) -> None:
+    def move_bet(self, bet: int) -> None:
         """
         Player bets
         """
-        raise NotImplementedError
+        self.bet_this_round = bet
 
-    def move_raise(self) -> None:
+    def move_raise(self, betraise: int) -> None:
         """
         Player raises bet
         """
-        raise NotImplementedError
+        self.bet_this_round = betraise
+        self.has_raised = True
 
     def move_check(self) -> None:
         """
         Player checks
         """
-        raise NotImplementedError
 
-    def move_call(self) -> None:
+    def move_call(self, last_bet: int) -> None:
         """
         Player calls
         """
-        raise NotImplementedError
+        self.bet_this_round = last_bet
 
 
 class CheckPlayer(Player):
