@@ -59,6 +59,8 @@ class PokerGame:
         self.community_cards = set()
         self.turn = 0
         self.winner = None
+        self.player1_poker_hand = ''
+        self.player2_poker_hand = ''
 
     def __str__(self) -> str:
         output_msg = f'Player 1 Hand: {[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.player1_hand]} - {self.player1_poker_hand}\n'
@@ -77,7 +79,7 @@ class PokerGame:
             self.player2_moves.append(move)
 
         # add raise amount
-        if self.last_bet != move[1]:
+        if self.last_bet != move[1] and move[1] > 0:
             self.last_bet += move[1]
         if move[1] > 0:
             self.pool += move[1]
@@ -104,6 +106,7 @@ class PokerGame:
             return
 
         self.stage += 1
+        self.last_bet = 0
 
     def _pick_card(self) -> Card:
         """
@@ -135,7 +138,7 @@ class PokerGame:
                 self.community_cards.add(self._pick_card())
             self.stage = 4
 
-        if self.stage == 4:
+        if self.stage == 5:
             p1_score = self._rank_poker_hand(self.player1_hand)
             p2_score = self._rank_poker_hand(self.player2_hand)
             self.player1_poker_hand = NUM_TO_POKER_HAND[p1_score[0]]
