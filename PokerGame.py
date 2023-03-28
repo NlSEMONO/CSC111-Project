@@ -312,7 +312,7 @@ class PokerGame:
         rank_counts = [0] * 15
         for card in cards:
             rank_counts[card[0]] += 1
-            if cards[0] == 1: # ace also = 14
+            if card[0] == 1: # ace also = 14
                 rank_counts[14] += 1
         pattern_counts = {2: [], 3: [], 4: []}
         for i in range(14):
