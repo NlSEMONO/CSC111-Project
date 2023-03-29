@@ -7,6 +7,12 @@ from typing import Optional
 
 import PokerGame
 
+#STATICS FOR MOVE CODES
+FOLD_CODE = 0
+CHECK_CODE = 1
+CALL_CODE = 2
+BET_CODE = 3
+RAISE_CODE = 4
 
 class Player:
     """
@@ -210,11 +216,11 @@ class ConservativePlayer(Player):
         The move number correlates to the type of move the player makes.
         Bet is the bet amount.
         Moves:
-        0 - Fold
-        1 - Bet
-        2 - Raise
-        3 - Check
-        4 - Call
+        0: Fold
+        1: Check
+        2: Call
+        3: Bet
+        4: Raise
         """
         if not self.has_moved:
             self.has_moved = True
@@ -222,14 +228,54 @@ class ConservativePlayer(Player):
             if win_prob >= 0.7:
                 bet_amount = int(self.bet_size(game_state) * 0.5)
                 self.move_bet(bet_amount)
-                return (1, bet_amount)
+                return (3, bet_amount)
             elif win_prob >= 0.5:
                 bet_amount = int(self.bet_size(game_state) * 0.25)
                 self.move_bet(bet_amount)
-                return (1, bet_amount)
+                return (3, bet_amount)
         else:
             self.move_fold()
             return (0, 0)
+
+    def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
+        """
+        Calculates current bet size reasonable to the gamestate.
+        Calculate chance to "scare/provoke" opponents into making mistakes.
+        """
+        # Determine a bet size based on the current balance and win probability
+        bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
+        return bet_amount
+
+    def win_probability(self, game_state: PokerGame) -> float:
+        """
+        Calculates current win probability given the information at hand.
+        Idk how to calculate this rn
+        Maybe we could use a Python library? ex. PyPokerEngine and PyPokerGUI
+        """
+
+
+class SmartPlayer(Player):
+    """
+    A player that tends to play conservatively and rarely bluffs.
+    Only bets/raises if they have a high probability of winning (>= 70%), or a moderately strong hand with a reasonable
+     chance of winning (>= 50%). In all other cases, the player will fold.
+    """
+
+    def __init__(self, balance: int) -> None:
+        super().__init__(balance)
+
+    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+        """
+        Makes a move based on the state of the 'board' (game_state) it is given
+        The move number correlates to the type of move the player makes.
+        Bet is the bet amount.
+        Moves:
+        0: Fold
+        1: Check
+        2: Call
+        3: Bet
+        4: Raise
+        """
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
