@@ -5,6 +5,7 @@ File for class that represents a game (state) of poker
 """
 import random
 from typing import Optional, Any
+from Player import FOLD_CODE
 
 # ARE WE COMFORTABLE WITH USING TUPLES FOR HANDS? WE ARE GONNA NEED TO PARSE THE DATA INTO INTEGERS ANYWAYS BECAUSE
 # WE NEED TO TURN CARDS INTO ARRAY INDICIES FOR AN IMAGE ARRAY, WHICH IMAGES WILL BE STORED IN.
@@ -126,10 +127,10 @@ class PokerGame:
             return self.winner
 
         # check for folds
-        if len(self.player1_moves) > 0 and self.player1_moves[-1][0] == 2:
+        if len(self.player1_moves) > 0 and self.player1_moves[-1][0] == FOLD_CODE:
             self.winner = 2
             return self.winner
-        if len(self.player2_moves) > 0 and self.player2_moves[-1][0] == 2:
+        if len(self.player2_moves) > 0 and self.player2_moves[-1][0] == FOLD_CODE:
             self.winner = 2
             return self.winner
 
@@ -139,8 +140,8 @@ class PokerGame:
             self.stage = 4
 
         if self.stage == 5:
-            p1_score = self._rank_poker_hand(self.player1_hand)
-            p2_score = self._rank_poker_hand(self.player2_hand)
+            p1_score = self.rank_poker_hand(self.player1_hand)
+            p2_score = self.rank_poker_hand(self.player2_hand)
             self.player1_poker_hand = NUM_TO_POKER_HAND[p1_score[0]]
             self.player2_poker_hand = NUM_TO_POKER_HAND[p2_score[0]]
 
@@ -201,7 +202,7 @@ class PokerGame:
         else:
             return 1 if p1_cards[i][0] > p2_cards[i][0] else 2
 
-    def _rank_poker_hand(self, hand: set[Card]) -> tuple[Any, ...]:
+    def rank_poker_hand(self, hand: set[Card]) -> tuple[Any, ...]:
         """
         Returns how 'strong' a poker hand is (lower first number means stronger, higher second number means better tie-
         breaker score)
@@ -302,9 +303,12 @@ class PokerGame:
             if card[0] == 1: # ace also = 14
                 rank_counts[14] += 1
         pattern_counts = {2: [], 3: [], 4: []}
-        for i in range(14):
-            if rank_counts[i] - 2 >= 0:
+        for i in range(14, -1, -1):
+            if (rank_counts[i] - 2 > 0 and len(pattern_counts[rank_counts[i]]) == 0) or rank_counts[i] == 2:
                 pattern_counts[rank_counts[i]].append(i)
+            elif rank_counts[i] - 3 >= 0:
+                pattern_counts[rank_counts[i] - 1].append(i)
+
         for i in range(2, 5):
             pattern_counts[i].reverse()
         return pattern_counts

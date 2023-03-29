@@ -5,6 +5,9 @@ import random
 p1 = Player.CheckPlayer(100)
 p2 = Player.CheckPlayer(100)
 
+NUM_TO_ACTION = {Player.FOLD_CODE: 'Fold', Player.CHECK_CODE: 'Check', Player.CALL_CODE: 'Call',
+                 Player.BET_CODE: 'Bet', Player.RAISE_CODE: 'Raise'}
+
 def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
     """
     Simulates a round of poker
@@ -12,14 +15,16 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
     dealer = random.randint(1, 2)
     game = PokerGame()
     turn_order = [player1 if dealer == 1 else player2, player2 if dealer == 1 else player1]
+    corresponding_hand = [1 if dealer == 1 else 2, 2 if dealer == 1 else 1]
     game.next_stage()
 
     while game.check_winner() is None:
         # print(f'{game.last_bet} {game.community_cards} {game.stage}')
-        move = turn_order[game.turn].make_move(game)
+        move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
+        print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s{"" if move[0] in {Player.FOLD_CODE, Player.CHECK_CODE, Player.CALL_CODE} else " "+str(move[1])}')
         game.run_move(move)
-        if move[0] == 3:
-            turn_order[game.turn] = False # must move again if raise occurs
+        if move[0] == Player.RAISE_CODE:
+            turn_order[game.turn].has_moved = False # must move again if raise occurs
         game.check_winner()
         if all(p.has_moved for p in turn_order):
             game.next_stage()
@@ -38,11 +43,3 @@ for i in range(100):
     game = run_round(p1, p2)
     print(f'Player {game.winner} has won the game!')
     print(game)
-
-"""
-test case for straight flush!
-
-game = PokerGame()
-game.community_cards = {(1, 1), (2, 1), (3, 1), (4, 1), (8, 4)}
-game._rank_poker_hand({(5, 1), (10, 2)})
-"""
