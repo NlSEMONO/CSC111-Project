@@ -14,6 +14,11 @@ CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
 
+#STATICS FOR HAND WEIGHTING (play around with these not sure) (not used atm)
+TOP_THREE = 2.1
+MIDDLE_THREE = 2.01
+BOTTOM = 1.5
+
 class Player:
     """
     Abstract class representing a player or a playstyle
@@ -45,7 +50,7 @@ class Player:
         self.total_bluffs = 0
         self.balance = balance
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
@@ -55,11 +60,109 @@ class Player:
         """
         raise NotImplementedError
 
-    def win_probability(self, game_state: PokerGame) -> float:
+    def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
         Calculates current win probability given the information at hand.
         """
-        raise NotImplementedError
+        # turn stuff to list and then make a clone for computation (hypothetical)
+        if player_num == 1:
+            hand = list(game_state.player1_hand)
+            clone_game_state = PokerGame
+            clone_game_state.player1_hand = game_state.player1_hand # for computation
+        else:
+            hand = list(game_state.player2_hand)
+            clone_game_state = PokerGame
+            clone_game_state.player1_hand = game_state.player2_hand # for computation
+        clone_game_state.player1_hand = game_state.community_cards
+
+        if game_state.stage > 1: # current best hand
+            current_best = clone_game_state._rank_poker_hand(clone_game_state.player1_hand)[0]
+        total = 0
+
+        #ace config
+        if hand[0][0] == 1:
+            hand[0][0] += 13
+        if hand[1][0] == 1:
+            hand[0][0] += 13
+
+        if game_state.stage == 1: #Pre flop
+            chance = 0.295
+            if hand[0][0] == hand[1][0] and hand[1][0]: #pairs (avg +20%)
+                    chance += 0.2
+            if hand[0][1] == hand[1][1]: #same suit (avg +3.5%)
+                chance += 0.035
+            if hand[0][1] == hand[1][1] and (hand[0][0] == hand[1][0] + 1 or hand[0][0] == hand[1][0] - 1):
+                #straight flush chance
+                chance += 0.07
+            if hand[0][0] == hand[1][0] + 1 or hand[0][0] == hand[1][0] - 1: #straight
+                chance += 0.02
+            maximumat = max(hand[0][0], hand[1][0])
+            chance += maximumat * 2
+            chance += 5 + (min(hand[0][0], hand[1][0]) - 14)
+
+        elif game_state.stage == 2: #Flop
+            flop = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
+            total = 0
+            for i in range(1, 14): #47*46 iterations)
+                for j in range(1, 5):
+                    if (i, j) not in clone_game_state.community_cards:
+                        clone_game_state.community_cards.add((i, j))
+                        for n in range(1, 14):
+                            for m in range(1, 5):
+                                if (i, j) not in clone_game_state.community_cards:
+                                    clone_game_state.community_cards.add((n, m))
+                                    rank = clone_game_state._rank_poker_hand(clone_game_state.player1_hand)
+                                    flop[rank[0]] += 1
+                                    clone_game_state.community_cards.remove((n, m))
+                        clone_game_state.community_cards.remove((i, j))
+
+            for i in flop:
+                if i >= current_best: #improve hand only (rank wise)
+                    total += weight_hand(i) * (1/2162) * flop[i]
+
+            total =
+            return total
+        elif game_state.stage == 3: #Turn
+            flop = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
+            total = 0
+            for i in range(1, 14):
+                for j in range(1, 5):
+                    if (i, j) not in clone_game_state.community_cards:
+                        clone_game_state.community_cards.add((i, j))
+                        rank = clone_game_state._rank_poker_hand(clone_game_state.player1_hand)
+                        flop[rank[0]] += 1
+                        clone_game_state.community_cards.remove((i, j))
+
+            for i in flop:
+                total += weight_hand(i) * (1/46) * flop[i]
+
+            total = total/46
+            return total
+        else: #River
+            rank = game_state._rank_poker_hand(clone_game_state.player1_hand)
+
+    def weight_hand(self, rank: int) -> float:
+        if rank == 1:
+            return 1
+        elif rank == 2:
+            return 0.997
+        elif rank == 3:
+            return 0.982
+        elif rank == 4:
+            return 0.97
+        elif rank == 5:
+            return 0.94
+        elif rank == 6:
+            return 0.89
+        elif rank == 7:
+            return 0.85
+        elif rank == 8:
+            return 0.62
+        elif rank == 9:
+            return 0.17
+        else:
+            return 0.01
+
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
@@ -68,11 +171,6 @@ class Player:
         I think the bet size should also be determined by win probability
         """
         raise NotImplementedError
-
-    """
-    The following should be hard coded (I think idk)
-    I have not added them yet oops
-    """
 
     def move_fold(self) -> None:
         """
@@ -110,7 +208,7 @@ class CheckPlayer(Player):
     Player that checks only checks or folds depending on the current bet
     """
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Always checks if there is no bet, and will fold otherwise
 
@@ -134,7 +232,7 @@ class AggressivePlayer(Player):
     def __init__(self, balance: int) -> None:
         super().__init__(balance)
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
@@ -210,7 +308,7 @@ class ConservativePlayer(Player):
     def __init__(self, balance: int) -> None:
         super().__init__(balance)
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
