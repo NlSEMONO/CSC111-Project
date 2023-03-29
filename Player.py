@@ -45,7 +45,7 @@ class Player:
         self.total_bluffs = 0
         self.balance = balance
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
@@ -55,11 +55,43 @@ class Player:
         """
         raise NotImplementedError
 
-    def win_probability(self, game_state: PokerGame) -> float:
+    def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
         Calculates current win probability given the information at hand.
         """
-        raise NotImplementedError
+        if player_num == 1:
+            hand = list(game_state.player1_hand)
+        else:
+            hand = list(game_state.player2_hand)
+
+        #ace config
+        if hand[0][0] == 1:
+            hand[0][0] += 13
+        if hand[1][0] == 1:
+            hand[0][0] += 13
+
+        if game_state.stage == 1: #Pre flop
+            chance = 0.295
+            if hand[0][0] == hand[1][0] and hand[1][0]: #pairs (avg +20%)
+                    chance += 0.2
+            if hand[0][1] == hand[1][1]: #same suit (avg +3.5%)
+                chance += 0.035
+            if hand[0][1] == hand[1][1] and (hand[0][0] == hand[1][0] + 1 or hand[0][0] == hand[1][0] - 1):
+                #straight flush chance
+                chance += 0.07
+            if hand[0][0] == hand[1][0] + 1 or hand[0][0] == hand[1][0] - 1: #straight
+                chance += 0.02
+            maximumat = max(hand[0][0], hand[1][0])
+            chance += maximumat * 2
+            chance += 5 + (min(hand[0][0], hand[1][0]) - 14)
+
+        elif game_state == 2: #Flop
+
+
+        elif game_state == 3: #Turn
+
+        else: #River
+
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
@@ -68,11 +100,6 @@ class Player:
         I think the bet size should also be determined by win probability
         """
         raise NotImplementedError
-
-    """
-    The following should be hard coded (I think idk)
-    I have not added them yet oops
-    """
 
     def move_fold(self) -> None:
         """
@@ -110,7 +137,7 @@ class CheckPlayer(Player):
     Player that checks only checks or folds depending on the current bet
     """
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Always checks if there is no bet, and will fold otherwise
 
@@ -134,7 +161,7 @@ class AggressivePlayer(Player):
     def __init__(self, balance: int) -> None:
         super().__init__(balance)
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
@@ -210,7 +237,7 @@ class ConservativePlayer(Player):
     def __init__(self, balance: int) -> None:
         super().__init__(balance)
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
