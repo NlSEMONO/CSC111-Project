@@ -20,7 +20,8 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
         move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
         print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s{"" if move[0] in {Player.FOLD_CODE, Player.CHECK_CODE, Player.CALL_CODE} else " "+str(move[1])}')
         game.run_move(move)
-        if move[0] == Player.RAISE_CODE:
+
+        if move[0] == Player.RAISE_CODE or (move[0] == Player.BET_CODE and move[1] > 0):
             turn_order[game.turn].has_moved = False # must move again if raise occurs
         game.check_winner()
         if all(p.has_moved for p in turn_order):
@@ -37,8 +38,8 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
 
 
 for i in range(100):
-    p1 = Player.CheckPlayer(100)
+    p1 = Player.TestingPlayer(100)
     p2 = Player.NaivePlayer(100)
     simulated_game = run_round(p1, p2)
-    print(f'Player {simulated_game.winner} has won the game!')
+    print(f'Player {simulated_game.winner} has won the game and {simulated_game.pool} currency!')
     print(simulated_game)

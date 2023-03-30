@@ -5,7 +5,7 @@ File for ALL player classes, which represent different playstyles for playing po
 """
 from typing import Optional
 
-import PokerGame
+from PokerGame import PokerGame, Card
 import math
 
 #STATICS FOR MOVE CODES
@@ -50,7 +50,7 @@ class Player:
         self.total_bluffs = 0
         self.balance = balance
 
-    def make_move(self, game_state: PokerGame.PokerGame, player_num: int) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
@@ -60,7 +60,44 @@ class Player:
         """
         raise NotImplementedError
 
-    def win_probability(self, game_state: PokerGame.PokerGame, player_num: int) -> float:
+    def rate_hand(self, game_state: PokerGame, player_num: int) -> int:
+        """
+        Rates how good an initial hand is based on possible poker hands it can make
+
+        Preconditions:
+            - player_num == 1 or player_num == 2
+
+        1 - Pair
+        2 - Straight flush
+        3 - both cards jack or higher or flush/straight draw
+        4 - nothing special
+        """
+        if player_num == 1:
+            hand = list(game_state.player1_hand)
+        else:
+            hand = list(game_state.player2_hand)
+
+        if hand[0][0] == 1:
+            hand.append((14, hand[0][1]))
+        if hand[1][0] == 1:
+            hand.append((14, hand[1][1]))
+
+        straight_chance, sorted_hand = False, sorted(hand)
+        if hand[0][0] != hand[1][0] and (any(sorted_hand[0][0] + 1 == card[0] for card in sorted_hand[1:]) or any(
+                sorted_hand[-1][0] - 1 == card[0] for card in sorted_hand[:-1])):
+            straight_chance = True
+
+        if hand[0][0] == hand[1][0]:  # pair
+            return 1
+        if hand[0][1] == hand[1][1] and straight_chance:  # straight + flush
+            return 2
+        if hand[0][1] == hand[1][1] or straight_chance or (sorted_hand[-1][0] > 10 or sorted_hand[-2][0] > 10):
+            # highest 2 cards are jack or better or flush or straight
+            return 3
+        else:  # nothing special
+            return 4
+
+    def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
         Calculates current win probability given the information at hand.
         Note: Nested loops run maximum of approx 2.6k iterations. These are only used for generating simulations, so
@@ -71,11 +108,11 @@ class Player:
         # turn stuff to list and then make a clone for computation (hypothetical)
         if player_num == 1:
             hand = list(game_state.player1_hand)
-            clone_game_state = PokerGame.PokerGame()
+            clone_game_state = PokerGame()
             clone_game_state.player1_hand = game_state.player1_hand # for computation
         else:
             hand = list(game_state.player2_hand)
-            clone_game_state = PokerGame.PokerGame()
+            clone_game_state = PokerGame()
             clone_game_state.player1_hand = game_state.player2_hand # for computation
         clone_game_state.community_cards = game_state.community_cards
 
@@ -203,38 +240,43 @@ class Player:
         """
         raise NotImplementedError
 
-    def move_fold(self) -> None:
+    def move_fold(self) -> tuple[int, int]:
         """
         Player folds
         """
         self.has_folded = True
+        return (FOLD_CODE, -1)
 
-    def move_bet(self, bet: int) -> None:
+    def move_bet(self, bet: int) -> tuple[int, int]:
         """
         Player bets
         Preconditions:
             - bet <= self.balance and bet > 0
         """
         self.bet_this_round = bet
+        return (BET_CODE, bet)
 
-    def move_raise(self, betraise: int) -> None:
+    def move_raise(self, betraise: int) -> tuple[int, int]:
         """
         Player raises bet
             - betraise <= self.balance and betraise > self.bet_this_round
         """
         self.bet_this_round = betraise
         self.has_raised = True
+        return (RAISE_CODE, betraise)
 
-    def move_check(self) -> None:
+    def move_check(self) -> tuple[int, int]:
         """
         Player checks
         """
+        return (CHECK_CODE, 0)
 
-    def move_call(self, last_bet: int) -> None:
+    def move_call(self, last_bet: int) -> tuple[int, int]:
         """
         Player calls
         """
         self.bet_this_round = last_bet
+        return (CALL_CODE, last_bet)
 
 
 class CheckPlayer(Player):
@@ -249,13 +291,32 @@ class CheckPlayer(Player):
         Will always bet on first turn
         """
         self.has_moved = True
-        if game_state.stage == 1 and self.bet_this_round == 0:
-            self.bet_this_round = 1
-            return (BET_CODE, 1)
+        if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
+            return self.move_bet(1)
+        elif game_state.stage == 1 and self.bet_this_round == 0:
+            return self.move_call(game_state.last_bet)
         elif game_state.last_bet > 0:
-            return (FOLD_CODE, -1)
+            return self.move_fold()
         else:
-            return (CHECK_CODE, -1)
+            return self.move_check()
+
+
+class TestingPlayer(Player):
+    """
+    Player that exists for the sole purpose of testing the effectiveness of other players.
+    """
+
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
+        """
+        Always bets, calls or checks; never folds or raises
+        """
+        self.has_moved = True
+        if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
+            return self.move_bet(2)
+        elif game_state.last_bet > 0:
+            return self.move_call(game_state.last_bet)
+        else:
+            return self.move_check()
 
 
 class AggressivePlayer(Player):
@@ -394,6 +455,14 @@ class NaivePlayer(Player):
         3: Bet
         4: Raise
         """
+        if game_state.stage == 1:
+            self.has_moved = True
+            how_good = self.rate_hand(game_state, player_num)
+            bet = int(self.bet_size(game_state, 0, how_good))
+            if self.has_raised or bet == game_state.last_bet:
+                return self.move_check()
+            return self.move_bet(bet) if game_state.last_bet == 0 else self.move_raise(bet)
+
         win_prob = self.win_probability(game_state, player_num)
         if not self.has_moved:
             self.has_moved = True
@@ -446,11 +515,19 @@ class NaivePlayer(Player):
             self.move_fold()
             return (0, 0)
 
-    def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
+    def bet_size(self, game_state: PokerGame, win_prob_threshold: float, hand_quality: int = 0) -> float:
         """
         Calculates current bet size reasonable to the gamestate.
         Calculate chance to "scare/provoke" opponents into making mistakes.
         """
         # Determine a bet size based on the current balance and win probability
+        if game_state.stage == 1:
+            if hand_quality == 1:
+                return 0.8 * self.balance
+            elif hand_quality == 2:
+                return 0.04 * self.balance
+            else:
+                return game_state.last_bet
+
         bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
         return bet_amount
