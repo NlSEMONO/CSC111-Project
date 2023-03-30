@@ -6,6 +6,7 @@ File for ALL player classes, which represent different playstyles for playing po
 from typing import Optional
 
 import PokerGame
+import math
 
 #STATICS FOR MOVE CODES
 FOLD_CODE = 0
@@ -15,9 +16,8 @@ BET_CODE = 3
 RAISE_CODE = 4
 
 #STATICS FOR HAND WEIGHTING (play around with these not sure) (not used atm)
-TOP_THREE = 2.1
-MIDDLE_THREE = 2.01
-BOTTOM = 1.5
+LOG_CNST = 10
+MOD_LOG = 4.9
 
 class Player:
     """
@@ -75,8 +75,6 @@ class Player:
             clone_game_state.player1_hand = game_state.player2_hand # for computation
         clone_game_state.player1_hand = game_state.community_cards
 
-        if game_state.stage > 1: # current best hand
-            current_best = clone_game_state._rank_poker_hand(clone_game_state.player1_hand)[0]
         total = 0
 
         #ace config
@@ -103,66 +101,89 @@ class Player:
         elif game_state.stage == 2: #Flop
             flop = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
             total = 0
+            same = 0
+            current_best = game_state.rank_poker_hand(clone_game_state.player1_hand)
             for i in range(1, 14): #47*46 iterations)
                 for j in range(1, 5):
-                    if (i, j) not in clone_game_state.community_cards:
+                    if (i, j) not in clone_game_state.community_cards and (i, j) not in clone_game_state.player1_hand:
                         clone_game_state.community_cards.add((i, j))
                         for n in range(1, 14):
                             for m in range(1, 5):
-                                if (i, j) not in clone_game_state.community_cards:
+                                if (n, m) not in clone_game_state.community_cards and (n, m) not in clone_game_state.player1_hand:
                                     clone_game_state.community_cards.add((n, m))
-                                    rank = clone_game_state._rank_poker_hand(clone_game_state.player1_hand)
-                                    flop[rank[0]] += 1
+                                    rank = clone_game_state.rank_poker_hand(clone_game_state.player1_hand)
+                                    rank_beat = clone_game_state.rank_poker_hand(set())
+                                    if rank != rank_beat and rank != current_best: # if it is better than the community cards
+                                        flop[rank[0]] += 1
+                                    else:
+                                        same += 0
                                     clone_game_state.community_cards.remove((n, m))
                         clone_game_state.community_cards.remove((i, j))
-
+            same = same * weight_hand(current_best[0])
+            total += same
             for i in flop:
-                if i >= current_best: #improve hand only (rank wise)
-                    total += weight_hand(i) * (1/2162) * flop[i]
+                total += flop[i] * weight_hand(flop[i])
 
-            total =
-            return total
+            return total/2620
         elif game_state.stage == 3: #Turn
             flop = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
             total = 0
+            same = 0
+            current_best = game_state.rank_poker_hand(clone_game_state.player1_hand)
             for i in range(1, 14):
                 for j in range(1, 5):
-                    if (i, j) not in clone_game_state.community_cards:
+                    if (i, j) not in clone_game_state.community_cards and (i, j) not in clone_game_state.player1_hand:
                         clone_game_state.community_cards.add((i, j))
-                        rank = clone_game_state._rank_poker_hand(clone_game_state.player1_hand)
+                        rank = clone_game_state.rank_poker_hand(clone_game_state.player1_hand)
+                        rank_beat = clone_game_state.rank_poker_hand(set())
+                        if rank != rank_beat and rank != current_best: # if it is better than the community cards
+                            flop[rank[0]] += 1
+                        else:
+                            same += 0
                         flop[rank[0]] += 1
                         clone_game_state.community_cards.remove((i, j))
-
+            same = same * weight_hand(current_best[0])
+            total += same
             for i in flop:
-                total += weight_hand(i) * (1/46) * flop[i]
-
-            total = total/46
-            return total
+                total += flop[i] * weight_hand(flop[i])
+            return total/47
         else: #River
-            rank = game_state._rank_poker_hand(clone_game_state.player1_hand)
+            rank = clone_game_state.rank_poker_hand(clone_game_state.player1_hand)
+            rank_beat = clone_game_state.rank_poker_hand(set())
+            temp_player = set()
+            beat = 0
+            if rank == rank_beat: # no improvements
+                return 0
+            else:
+                for i in range(1, 14):  # 45*44 iterations -- checks every possible hand opponent can have and see if we can beat it
+                    for j in range(1, 5):
+                        if (i, j) not in game_state.community_cards and (i, j) not in clone_game_state.player1_hand:
+                            temp_player.add((i, j))
+                            for n in range(1, 14):
+                                for m in range(1, 5):
+                                    if (n, m) not in game_state.community_cards and (n, m) not in clone_game_state.player1_hand and (n, m) not in temp_player:
+                                        temp_player.add((n, m))
+                                        rank_temp = game_state.rank_poker_hand(temp_player)
+                                        if rank_temp[0] > rank[0]:
+                                        #is it worse than our hand
+                                            beat += 1
+                                        elif rank[0] == rank[0]:
+                                            if rank_temp[1] < rank[1]:
+                                                beat += 1
+                                        temp_player.remove((n, m))
+                            temp_player.remove((i, j))
+                return beat/(45*44)
+
 
     def weight_hand(self, rank: int) -> float:
-        if rank == 1:
+        if rank == 1: #approx hand weighting -- naive
             return 1
-        elif rank == 2:
-            return 0.997
-        elif rank == 3:
-            return 0.982
-        elif rank == 4:
-            return 0.97
-        elif rank == 5:
-            return 0.94
-        elif rank == 6:
-            return 0.89
-        elif rank == 7:
-            return 0.85
-        elif rank == 8:
-            return 0.62
-        elif rank == 9:
-            return 0.17
         else:
-            return 0.01
-
+            mod = 11 - rank
+            if rank <= 6:
+                return (math.log(mod) + 0.1) / MOD_LOG
+            else:
+                return (math.log(mod) + 0.1) / MOD_LOG*1.5
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
