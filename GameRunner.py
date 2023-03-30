@@ -2,9 +2,6 @@ from PokerGame import PokerGame
 import Player
 import random
 
-p1 = Player.CheckPlayer(100)
-p2 = Player.CheckPlayer(100)
-
 NUM_TO_ACTION = {Player.FOLD_CODE: 'Fold', Player.CHECK_CODE: 'Check', Player.CALL_CODE: 'Call',
                  Player.BET_CODE: 'Bet', Player.RAISE_CODE: 'Raise'}
 
@@ -40,6 +37,8 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
 
 
 for i in range(100):
-    game = run_round(p1, p2)
-    print(f'Player {game.winner} has won the game!')
-    print(game)
+    p1 = Player.CheckPlayer(100)
+    p2 = Player.NaivePlayer(100)
+    simulated_game = run_round(p1, p2)
+    print(f'Player {simulated_game.winner} has won the game!')
+    print(simulated_game)

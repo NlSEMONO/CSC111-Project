@@ -50,7 +50,7 @@ class Player:
         self.total_bluffs = 0
         self.balance = balance
 
-    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame.PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
@@ -60,7 +60,7 @@ class Player:
         """
         raise NotImplementedError
 
-    def win_probability(self, game_state: PokerGame, player_num: int) -> float:
+    def win_probability(self, game_state: PokerGame.PokerGame, player_num: int) -> float:
         """
         Calculates current win probability given the information at hand.
         Note: Nested loops run maximum of approx 2.6k iterations. These are only used for generating simulations, so
@@ -71,32 +71,36 @@ class Player:
         # turn stuff to list and then make a clone for computation (hypothetical)
         if player_num == 1:
             hand = list(game_state.player1_hand)
-            clone_game_state = PokerGame()
+            clone_game_state = PokerGame.PokerGame()
             clone_game_state.player1_hand = game_state.player1_hand # for computation
         else:
             hand = list(game_state.player2_hand)
-            clone_game_state = PokerGame()
+            clone_game_state = PokerGame.PokerGame()
             clone_game_state.player1_hand = game_state.player2_hand # for computation
-        clone_game_state.player1_hand = game_state.community_cards
+        clone_game_state.community_cards = game_state.community_cards
 
         total = 0
 
-        #ace config
-        if hand[0][0] == 1:
-            hand[0][0] += 13
-        if hand[1][0] == 1:
-            hand[0][0] += 13
-
         if game_state.stage == 1: #Pre flop
             chance = 0.295
-            if hand[0][0] == hand[1][0] and hand[1][0]: #pairs (avg +20%)
+            # ace config
+            if hand[0][0] == 1:
+                hand.append((14, hand[0][1]))
+            if hand[1][0] == 1:
+                hand.append((14, hand[1][1]))
+
+            straight_chance, sorted_hand = False, sorted(hand)
+            if hand[0][0] != hand[1][0] and (any(sorted_hand[0][0] + 1 == card[0] for card in sorted_hand[1:]) or any(sorted_hand[-1][0] - 1 == card[0] for card in sorted_hand[:-1])):
+                straight_chance = True
+
+            if hand[0][0] == hand[1][0]: #pairs (avg +20%)
                     chance += 0.2
             if hand[0][1] == hand[1][1]: #same suit (avg +3.5%)
                 chance += 0.035
-            if hand[0][1] == hand[1][1] and (hand[0][0] == hand[1][0] + 1 or hand[0][0] == hand[1][0] - 1):
+            if hand[0][1] == hand[1][1] and straight_chance:
                 #straight flush chance
                 chance += 0.07
-            if hand[0][0] == hand[1][0] + 1 or hand[0][0] == hand[1][0] - 1: #straight
+            if straight_chance: #straight
                 chance += 0.02
             maximumat = max(hand[0][0], hand[1][0])
             chance += (maximumat * 2)/100
@@ -123,10 +127,10 @@ class Player:
                                         same += 0
                                     clone_game_state.community_cards.remove((n, m))
                         clone_game_state.community_cards.remove((i, j))
-            same = same * weight_hand(current_best[0])
+            same = same * self.weight_hand(current_best[0])
             total += same
             for i in flop:
-                total += flop[i] * weight_hand(flop[i])
+                total += flop[i] * self.weight_hand(i)
 
             return min((total/2620), 1)
         elif game_state.stage == 3: #Turn
@@ -146,10 +150,10 @@ class Player:
                             same += 0
                         flop[rank[0]] += 1
                         clone_game_state.community_cards.remove((i, j))
-            same = same * weight_hand(current_best[0])
+            same = same * self.weight_hand(current_best[0])
             total += same
             for i in flop:
-                total += flop[i] * weight_hand(flop[i])
+                total += flop[i] * self.weight_hand(i)
             return min((total/47), 1)
         else: #River
             rank = clone_game_state.rank_poker_hand(clone_game_state.player1_hand)
@@ -168,12 +172,8 @@ class Player:
                                     if (n, m) not in game_state.community_cards and (n, m) not in clone_game_state.player1_hand and (n, m) not in temp_player:
                                         temp_player.add((n, m))
                                         rank_temp = game_state.rank_poker_hand(temp_player)
-                                        if rank_temp[0] > rank[0]:
-                                        #is it worse than our hand
+                                        if game_state.determine_winner(rank, rank_temp) == 1:
                                             beat += 1
-                                        elif rank[0] == rank[0]:
-                                            if rank_temp[1] < rank[1]:
-                                                beat += 1
                                         temp_player.remove((n, m))
                             temp_player.remove((i, j))
                 return min(beat/(45*44), 1)
@@ -251,11 +251,11 @@ class CheckPlayer(Player):
         self.has_moved = True
         if game_state.stage == 1 and self.bet_this_round == 0:
             self.bet_this_round = 1
-            return (1, 1)
+            return (BET_CODE, 1)
         elif game_state.last_bet > 0:
-            return (2, -1)
+            return (FOLD_CODE, -1)
         else:
-            return (0, -1)
+            return (CHECK_CODE, -1)
 
 
 class AggressivePlayer(Player):
@@ -372,7 +372,7 @@ class ConservativePlayer(Player):
         return bet_amount
 
 
-class NaivePLayer(Player):
+class NaivePlayer(Player):
     """
     A player that tends to play conservatively and rarely bluffs.
     Only bets/raises if they have a high probability of winning (>= 70%), or a moderately strong hand with a reasonable
@@ -426,7 +426,7 @@ class NaivePLayer(Player):
                     return (3, bet_amount)
                 elif game_state.last_bet >= bet_amount:
                     if game_state.stage == 4:
-                        self.fold()
+                        self.move_fold()
                         return (0, 0)
                     self.move_check()
                     return (1, 0)
@@ -435,7 +435,7 @@ class NaivePLayer(Player):
                     return (2, game_state.last_bet)
             elif win_prob >= 0.1: #pass
                 if game_state.stage == 4:
-                    self.fold()
+                    self.move_fold()
                     return (0, 0)
                 self.move_check()
                 return (1, 0)
