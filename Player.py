@@ -71,11 +71,11 @@ class Player:
         # turn stuff to list and then make a clone for computation (hypothetical)
         if player_num == 1:
             hand = list(game_state.player1_hand)
-            clone_game_state = PokerGame
+            clone_game_state = PokerGame()
             clone_game_state.player1_hand = game_state.player1_hand # for computation
         else:
             hand = list(game_state.player2_hand)
-            clone_game_state = PokerGame
+            clone_game_state = PokerGame()
             clone_game_state.player1_hand = game_state.player2_hand # for computation
         clone_game_state.player1_hand = game_state.community_cards
 
@@ -399,16 +399,52 @@ class NaivePLayer(Player):
             self.has_moved = True
             if win_prob >= 0.92:
                 bet_amount = int(self.bet_size(game_state, win_prob) * 0.75)
-                self.move_bet(bet_amount)
-                return (3, bet_amount)
+                if game_state.last_bet == 0:
+                    self.move_bet(bet_amount)
+                    return (3, bet_amount)
+                elif game_state.last_bet >= bet_amount:
+                    self.move_call(game_state.last_bet)
+                    return (2, game_state.last_bet)
+                else:
+                    self.has_raised = True
+                    return (4, bet_amount)
             elif win_prob >= 0.75:
                 bet_amount = int(self.bet_size(game_state, 0.75) * 0.75)
-                self.move_bet(bet_amount)
+                if game_state.last_bet == 0:
+                    self.move_bet(bet_amount)
+                elif game_state.last_bet >= bet_amount:
+                    self.move_call(game_state.last_bet)
+                    return (2, game_state.last_bet)
+                else:
+                    self.has_raised = True
+                    return (4, bet_amount)
                 return (3, bet_amount)
-            elif win_prob >= 0.5:
+            elif win_prob >= 0.5: #safe betting
                 bet_amount = int(self.bet_size(game_state, 0.5) * 0.25)
-                self.move_bet(bet_amount)
-                return (3, bet_amount)
+                if game_state.last_bet == 0:
+                    self.move_bet(bet_amount)
+                    return (3, bet_amount)
+                elif game_state.last_bet >= bet_amount:
+                    if game_state.stage == 4:
+                        self.fold()
+                        return (0, 0)
+                    self.move_check()
+                    return (1, 0)
+                else:
+                    self.move_call(game_state.last_bet)
+                    return (2, game_state.last_bet)
+            elif win_prob >= 0.1: #pass
+                if game_state.stage == 4:
+                    self.fold()
+                    return (0, 0)
+                self.move_check()
+                return (1, 0)
+            else: #instant fold
+                self.move_fold()
+                return(0, 0)
+        else:
+            self.move_fold()
+            return (0, 0)
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
