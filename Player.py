@@ -63,6 +63,10 @@ class Player:
     def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
         Calculates current win probability given the information at hand.
+        Note: Nested loops run maximum of approx 2.6k iterations. These are only used for generating simulations, so
+        should not effect overall run of main code.
+        Preconditions:
+            - player_num == 1 or player_num == 2
         """
         # turn stuff to list and then make a clone for computation (hypothetical)
         if player_num == 1:
@@ -95,9 +99,9 @@ class Player:
             if hand[0][0] == hand[1][0] + 1 or hand[0][0] == hand[1][0] - 1: #straight
                 chance += 0.02
             maximumat = max(hand[0][0], hand[1][0])
-            chance += maximumat * 2
-            chance += 5 + (min(hand[0][0], hand[1][0]) - 14)
-
+            chance += (maximumat * 2)/100
+            chance += (5 + (min(hand[0][0], hand[1][0]) - 14))/100
+            return chance
         elif game_state.stage == 2: #Flop
             flop = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
             total = 0
@@ -124,7 +128,7 @@ class Player:
             for i in flop:
                 total += flop[i] * weight_hand(flop[i])
 
-            return total/2620
+            return min((total/2620), 1)
         elif game_state.stage == 3: #Turn
             flop = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
             total = 0
@@ -146,7 +150,7 @@ class Player:
             total += same
             for i in flop:
                 total += flop[i] * weight_hand(flop[i])
-            return total/47
+            return min((total/47), 1)
         else: #River
             rank = clone_game_state.rank_poker_hand(clone_game_state.player1_hand)
             rank_beat = clone_game_state.rank_poker_hand(set())
@@ -172,18 +176,24 @@ class Player:
                                                 beat += 1
                                         temp_player.remove((n, m))
                             temp_player.remove((i, j))
-                return beat/(45*44)
-
+                return min(beat/(45*44), 1)
 
     def weight_hand(self, rank: int) -> float:
+        """
+        Weights hand relative to how possible it is to get a given hand in relation to chance to win.
+        Not exactly accurate (esp at the bottom -- pairs) However in terms of pairs it will default to the last
+        part of the if statement.
+        Preconditions:
+            - rank >= 1 and rank <= 10
+        """
         if rank == 1: #approx hand weighting -- naive
             return 1
         else:
             mod = 11 - rank
             if rank <= 6:
-                return (math.log(mod) + 0.1) / MOD_LOG
+                return 2*(math.log(mod) + 0.1) / MOD_LOG
             else:
-                return (math.log(mod) + 0.1) / MOD_LOG*1.5
+                return 2*(math.log(mod) + 0.1) / MOD_LOG*1.5
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
@@ -202,12 +212,15 @@ class Player:
     def move_bet(self, bet: int) -> None:
         """
         Player bets
+        Preconditions:
+            - bet <= self.balance and bet > 0
         """
         self.bet_this_round = bet
 
     def move_raise(self, betraise: int) -> None:
         """
         Player raises bet
+            - betraise <= self.balance and betraise > self.bet_this_round
         """
         self.bet_this_round = betraise
         self.has_raised = True
@@ -265,7 +278,7 @@ class AggressivePlayer(Player):
         3: Bet
         4: Raise
         """
-        win_prob = self.win_probability(game_state)
+        win_prob = self.win_probability(game_state, player_num)
         # Determine whether to bet, raise or check
         if not self.has_moved:
             self.has_moved = True
@@ -311,13 +324,6 @@ class AggressivePlayer(Player):
         bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
         return bet_amount
 
-    def win_probability(self, game_state: PokerGame) -> float:
-        """
-        Calculates current win probability given the information at hand.
-        Idk how to calculate this rn
-        Maybe we could use a Python library? ex. PyPokerEngine and PyPokerGUI
-        """
-
 
 class ConservativePlayer(Player):
     """
@@ -343,7 +349,7 @@ class ConservativePlayer(Player):
         """
         if not self.has_moved:
             self.has_moved = True
-            win_prob = self.win_probability(game_state)
+            win_prob = self.win_probability(game_state, player_num)
             if win_prob >= 0.7:
                 bet_amount = int(self.bet_size(game_state) * 0.5)
                 self.move_bet(bet_amount)
@@ -365,15 +371,8 @@ class ConservativePlayer(Player):
         bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
         return bet_amount
 
-    def win_probability(self, game_state: PokerGame) -> float:
-        """
-        Calculates current win probability given the information at hand.
-        Idk how to calculate this rn
-        Maybe we could use a Python library? ex. PyPokerEngine and PyPokerGUI
-        """
 
-
-class SmartPlayer(Player):
+class NaivePLayer(Player):
     """
     A player that tends to play conservatively and rarely bluffs.
     Only bets/raises if they have a high probability of winning (>= 70%), or a moderately strong hand with a reasonable
@@ -383,7 +382,7 @@ class SmartPlayer(Player):
     def __init__(self, balance: int) -> None:
         super().__init__(balance)
 
-    def make_move(self, game_state: PokerGame) -> tuple[int, int]:
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
@@ -395,6 +394,21 @@ class SmartPlayer(Player):
         3: Bet
         4: Raise
         """
+        win_prob = self.win_probability(game_state, player_num)
+        if not self.has_moved:
+            self.has_moved = True
+            if win_prob >= 0.92:
+                bet_amount = int(self.bet_size(game_state, win_prob) * 0.75)
+                self.move_bet(bet_amount)
+                return (3, bet_amount)
+            elif win_prob >= 0.75:
+                bet_amount = int(self.bet_size(game_state, 0.75) * 0.75)
+                self.move_bet(bet_amount)
+                return (3, bet_amount)
+            elif win_prob >= 0.5:
+                bet_amount = int(self.bet_size(game_state, 0.5) * 0.25)
+                self.move_bet(bet_amount)
+                return (3, bet_amount)
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
@@ -404,10 +418,3 @@ class SmartPlayer(Player):
         # Determine a bet size based on the current balance and win probability
         bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
         return bet_amount
-
-    def win_probability(self, game_state: PokerGame) -> float:
-        """
-        Calculates current win probability given the information at hand.
-        Idk how to calculate this rn
-        Maybe we could use a Python library? ex. PyPokerEngine and PyPokerGUI
-        """
