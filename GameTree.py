@@ -3,7 +3,7 @@ File for game trees: a tree that represents all the collective move sequences pl
 """
 from __future__ import annotations
 from typing import Optional
-from PokerGame import Move, PokerGame, NUM_TO_POKER_HAND
+from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND
 from GameRunner import NUM_TO_ACTION
 
 FOLD_CODE = 0
@@ -72,20 +72,30 @@ class GameTree:
         """
         classes_so_far = set()
         if following == game_state.turn:
-            # Kind of confused on this part: how r we always sure that it is player1's turn
             current_best = game_state.rank_poker_hand(game_state.player1_hand)
             if 'High Card' == NUM_TO_POKER_HAND[current_best[0]]:
                 classes_so_far.add(f'High Card {current_best[1]} in hand')
             else:
                 classes_so_far.add(f'{NUM_TO_POKER_HAND[current_best[0]]} in hand')
-            for i in range(1, 11):  # Add strong poker hands that the player can threaten
-                if i < current_best[0]:
-                    classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} is threat')
+            used_cards = game_state.community_cards.union(game_state.player1_hand)
+            all_hands = self._generate_card_combos(used_cards, set(), 1)
+            for hand in all_hands:  # Add strong poker hands that the player can threaten
+                count = 0
+                hand_rank = game_state.rank_poker_hand(hand)
+                if hand_rank[0] >= 4:
+                    count += 1
+                if count >= 10:
+                    classes_so_far.add(f'{NUM_TO_POKER_HAND[hand_rank[0]]} can be threatened')
         else:
-            following_best = game_state.rank_poker_hand(game_state.player2_hand)
-            for i in range(1, 11):
-                if i < following_best[0]:
-                    classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} is threat')
+            used_cards = game_state.community_cards.union(game_state.player1_hand)
+            all_hands = self._generate_card_combos(used_cards, set(), 1)
+            for hand in all_hands:  # Add strong poker hands that the player can threaten
+                count = 0
+                hand_rank = game_state.rank_poker_hand(hand)
+                if hand_rank[0] >= 4:
+                    count += 1
+                if count >= 10:
+                    classes_so_far.add(f'{NUM_TO_POKER_HAND[hand_rank[0]]} can be threatened')
         # Add type of move that was played (same for both options)
         if move[0] == FOLD_CODE:
             classes_so_far.add('Fold')
@@ -102,3 +112,22 @@ class GameTree:
         Adds a new subtree to the tree's list of subtrees
         """
         self.subtrees[classes_of_action] = GameTree(classes_of_action)
+
+    def _generate_card_combos(self, used_cards: set[Card], cards_so_far: set[Card], level_to_stop: int) -> list[
+        set[Card]]:
+        """
+        Returns all the possible pairs of cards that have not appeared in used_cards
+        """
+        all_pairs = []
+        for i in range(1, 14):
+            for j in range(1, 5):
+                if (i, j) not in used_cards:
+                    if len(cards_so_far) == level_to_stop:
+                        added_card = cards_so_far.union({(i, j)})
+                        all_pairs.append(added_card)
+                    else:
+                        new_cards_so_far = cards_so_far.union({(i, j)})
+                        new_used_cards = used_cards.union(new_cards_so_far)
+                        all_pairs.extend(
+                            self._generate_card_combos(new_used_cards, new_cards_so_far, level_to_stop))
+        return all_pairs
