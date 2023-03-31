@@ -38,7 +38,7 @@ class GameTree:
         self.classes_of_action = node_val
         self.subtrees = {}
 
-    def insert_moves(self, moves: list[Move], game_states: list[PokerGame], following: int,
+    def insert_moves(self, moves: list[Move], game_states: list[PokerGame], following: int, evaluated: bool = False,
                      move_number: int = 0) -> None:
         """
         Inserts a sequence of moves into the tree. Will insert the move at move_number into a new subtree or current
@@ -56,12 +56,18 @@ class GameTree:
         else:
             current_move = moves[move_number]
             current_state = game_states[move_number]
-            classes_of_action = self.get_classes_of_action(current_move, current_state, following)
+            classes_of_action = self.get_classes_of_action(current_move, current_state, following, evaluated)
+            if len(classes_of_action) != 2: #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
+                #evaluation an only happen once per stage, hence the first move is an evaluation
+                evaluted = True
             if classes_of_action not in self.subtrees:
                 self.add_subtree(classes_of_action)
-            self.subtrees[classes_of_action].insert_moves(moves, game_states, following, move_number + 1)
+            if move_number + 1 != len(moves):
+                if current_state.stage != game_states[move_number + 1].stage: #checks to see if the next game_state has changed rounds
+                    evaluted = False
+            self.subtrees[classes_of_action].insert_moves(moves, game_states, following, evaluated, move_number + 1)
 
-    def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluate_move: bool = True) -> set[str]:
+    def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluated: bool, evaluate_move: bool = True) -> set[str]:
         """
         Returns 'tags' or what we call 'classes of action' characteristic of the given input board_state and
         corresponding move played.
@@ -112,18 +118,31 @@ class GameTree:
         class_to_add = self._determine_threats(game_state, used_cards, current_best)
         if class_to_add is not None:
             classes_so_far.add(class_to_add)
-        # Add type of move that was played (same for both options)
-        if evaluate_move:
-            if move[0] not in {BET_CODE, RAISE_CODE}:
-                classes_so_far.add(f'{NUM_TO_ACTION[move[0]]}')
-            else:
-                if game_state.pool <= move[1]:  # bet is about the pot size
-                    adjective = 'Conservative'
-                elif game_state.pool * 2 <= move[2]:  # bet is about 2 x the pot size
-                    adjective = 'Moderate'
+        # Add type of move that was played
+        if following != game_state.turn: #acts normally for the opponent
+            if evaluate_move:
+                if move[0] not in {BET_CODE, RAISE_CODE}:
+                    classes_so_far.add(f'{NUM_TO_ACTION[move[0]]}')
                 else:
-                    adjective = 'Aggressive'  # bet is otherwise very high
-                classes_so_far.add(f'{adjective} {NUM_TO_ACTION[move[0]]}')
+                    if game_state.pool <= move[1]:  # bet is about the pot size
+                        adjective = 'Conservative'
+                    elif game_state.pool * 2 <= move[2]:  # bet is about 2 x the pot size
+                        adjective = 'Moderate'
+                    else:
+                        adjective = 'Aggressive'  # bet is otherwise very high
+                    classes_so_far.add(f'{adjective} {NUM_TO_ACTION[move[0]]}')
+        elif evaluated:
+            if evaluate_move:
+                if move[0] not in {BET_CODE, RAISE_CODE}:
+                    return f'{NUM_TO_ACTION[move[0]]}'
+                else:
+                    if game_state.pool <= move[1]:  # bet is about the pot size
+                        adjective = 'Conservative'
+                    elif game_state.pool * 2 <= move[2]:  # bet is about 2 x the pot size
+                        adjective = 'Moderate'
+                    else:
+                        adjective = 'Aggressive'  # bet is otherwise very high
+                    return f'{adjective} {NUM_TO_ACTION[move[0]]}'
 
         return classes_so_far
 
@@ -134,6 +153,9 @@ class GameTree:
         self.subtrees[classes_of_action] = GameTree(classes_of_action)
 
     def _determine_threats(self, game_state: PokerGame, used_cards: set[Card], current_best: tuple[Any, ...]) -> Optional[str]:
+        """
+        Determien the most threateing hand the opponent can realistically create.
+        """
         all_hands = self._generate_card_combos(used_cards, set(), 1)
         better_hands = [0] * (current_best[0] + 1)
         for hand in all_hands:  # determine threatening hands the opponent can have

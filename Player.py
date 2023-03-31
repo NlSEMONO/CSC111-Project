@@ -14,6 +14,7 @@ CHECK_CODE = 1
 CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
+ALL_IN_CODE = 5
 
 #STATICS FOR HAND WEIGHTING (play around with these not sure) (not used atm)
 LOG_CNST = 10
