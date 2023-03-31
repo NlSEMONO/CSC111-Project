@@ -70,7 +70,6 @@ class GameTree:
         When we are not following the player's whose hand we know, classes of action may only contain two items:
         poker hands that can threaten the player who we are following and the type of move that was played.
         """
-        used parameter = union of community cards & player 1 cards / level 1?
         classes_so_far = set()
         if following == game_state.turn:
             # Kind of confused on this part: how r we always sure that it is player1's turn
@@ -82,8 +81,6 @@ class GameTree:
             for i in range(1, 11):  # Add strong poker hands that the player can threaten
                 if i < current_best[0]:
                     classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} is threat')
-                    try to make every single poker hand that the enemy can have
-                    : five or more instances of full house or higher = threat
         else:
             following_best = game_state.rank_poker_hand(game_state.player2_hand)
             for i in range(1, 11):
