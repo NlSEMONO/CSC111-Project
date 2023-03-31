@@ -4,6 +4,13 @@ File for game trees: a tree that represents all the collective move sequences pl
 from __future__ import annotations
 from typing import Optional
 from PokerGame import Move, PokerGame, NUM_TO_POKER_HAND
+from GameRunner import NUM_TO_ACTION
+
+FOLD_CODE = 0
+CHECK_CODE = 1
+CALL_CODE = 2
+BET_CODE = 3
+RAISE_CODE = 4
 
 
 class GameTree:
@@ -80,15 +87,14 @@ class GameTree:
                 if i < following_best[0]:
                     classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} is threat')
         # Add type of move that was played (same for both options)
-        if move == Move.Fold:
+        if move[0] == FOLD_CODE:
             classes_so_far.add('Fold')
-        elif move == Move.Check:
+        elif move[0] == CHECK_CODE:
             classes_so_far.add('Check')
-        elif move == Move.Call:
+        elif move[0] == CALL_CODE:
             classes_so_far.add('Call')
-        elif move == Move.Raise:
-            classes_so_far.add('Raise')
-            classes_so_far.add(f'Raise size: {Move.Raise[1]}')
+        else:
+            classes_so_far.add(f'{NUM_TO_ACTION[move[0]]}')
         return classes_so_far
 
     def add_subtree(self, classes_of_action: set[str]) -> None:
