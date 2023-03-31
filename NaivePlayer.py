@@ -41,25 +41,25 @@ class NaivePlayer(Player):
                 return self.move_call(game_state.last_bet)
 
         win_prob = self.win_probability(game_state, player_num)
-        print(win_prob)
-        if win_prob >= 0.95: # all in if win is basically guaranteed
-            bet_amount = int(self.balance)
+        bet_amount = int(self.balance) if win_prob >= 0.95 else int(self.bet_size(game_state, win_prob))
+        if bet_amount >= self.balance:
+            return self.move_all_in()
+        if win_prob >= 0.95:  # all in if win is basically guaranteed
             if game_state.last_bet == 0:
                 return self.move_bet(bet_amount)
             else:
                 return self.move_raise(bet_amount)
-        elif win_prob >= 0.5: #safe betting
-            bet_amount = int(self.bet_size(game_state, win_prob))
+        elif win_prob >= 0.5:  # safe betting
             if game_state.last_bet == 0:
                 return self.move_bet(bet_amount)
-            elif game_state.last_bet > (game_state.pool - game_state.last_bet) * (1 - win_prob): # their bet exceeds
+            elif game_state.last_bet > (game_state.pool - game_state.last_bet) * (1 - win_prob):  # their bet exceeds
                 # our expectation to win the game
                 return self.move_fold()
-            else: # call their 'bluff'
+            else:  # call their 'bluff'
                 return self.move_call(game_state.last_bet)
         elif game_state.last_bet == 0:
             return self.move_check()
-        else: # fold if under threat
+        else:  # fold if under threat
             return self.move_fold()
 
     def win_probability(self, game_state: PokerGame, player_num: int) -> float:
