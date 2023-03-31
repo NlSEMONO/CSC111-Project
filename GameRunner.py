@@ -49,15 +49,7 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
 
     return game
 
-<<<<<<< Updated upstream
 
-for i in range(100):
-    p1 = NaivePlayer(10000)
-    p2 = NaivePlayer(10000)
-    simulated_game = run_round(p1, p2)
-    print(f'Player {simulated_game.winner} has won the game and {simulated_game.pool} currency!')
-    print(simulated_game)
-=======
 if __name__ == '__main__':
     for i in range(10):
         p1 = Player.TestingPlayer(10000)
@@ -65,4 +57,3 @@ if __name__ == '__main__':
         simulated_game = run_round(p1, p2)
         print(f'Player {simulated_game.winner} has won the game and {simulated_game.pool} currency!')
         print(simulated_game)
->>>>>>> Stashed changes
