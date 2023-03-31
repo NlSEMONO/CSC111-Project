@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Optional
 from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND
 from GameRunner import NUM_TO_ACTION
+from Player import Player
 
 FOLD_CODE = 0
 CHECK_CODE = 1
@@ -13,6 +14,8 @@ BET_CODE = 3
 RAISE_CODE = 4
 
 THREAT_CONSTANT = 6
+
+burner_player = Player(10) # player object to access player methods
 
 class GameTree:
     """
@@ -27,12 +30,11 @@ class GameTree:
     have been played.
     - all(c == self.subtrees[c].classes_of_action for c in self.subtrees)
     """
-    # note that
     classes_of_action: Optional[set[str]]
     subtrees: dict[set[str], GameTree]
-    right_decision_threshold: float
+    move_confidence_value: float
 
-    def __init__(self, node_val: set[str] | None) -> None:
+    def __init__(self, node_val: Optional[set[str]] = None) -> None:
         self.classes_of_action = node_val
         self.subtrees = {}
 
@@ -54,12 +56,12 @@ class GameTree:
         else:
             current_move = moves[move_number]
             current_state = game_states[move_number]
-            classes_of_action = self._get_classes_of_action(current_move, current_state, following)
+            classes_of_action = self.get_classes_of_action(current_move, current_state, following)
             if classes_of_action not in self.subtrees:
                 self.add_subtree(classes_of_action)
             self.subtrees[classes_of_action].insert_moves(moves, game_states, following, move_number + 1)
 
-    def _get_classes_of_action(self, move: Move, game_state: PokerGame, following: int) -> set[str]:
+    def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluate_move: bool = True) -> set[str]:
         """
         Returns 'tags' or what we call 'classes of action' characteristic of the given input board_state and
         corresponding move played.
@@ -72,9 +74,20 @@ class GameTree:
         poker hands that can threaten the player who we are following and the type of move that was played.
         """
         classes_so_far = set()
-        current_best = game_state.rank_poker_hand(game_state.player1_hand)
-        used_cards = game_state.community_cards.union(game_state.player1_hand)
+        if following == 0:
+            player_hand = game_state.player1_hand
+        else:
+            player_hand = game_state.player2_hand
+        current_best = game_state.rank_poker_hand(player_hand)
+        used_cards = game_state.community_cards.union(player_hand)
         if following == game_state.turn:
+            if game_state.stage == 1:
+                hand_quality = burner_player.rate_hand(list(player_hand))
+                if hand_quality == 1:
+                    classes_so_far.add('BTN Hand')
+                else:
+                    classes_so_far.add('Non BTN Hand')
+                return classes_so_far
             # current best poker hand player can threaten
             if 'High Card' == NUM_TO_POKER_HAND[current_best[0]]:
                 classes_so_far.add(f'High Card {current_best[1]} in hand')
@@ -85,7 +98,7 @@ class GameTree:
                 possible_adds_comm_cards = self._generate_card_combos(used_cards, set(), 1 - len(game_state.community_cards))
                 hands = [0] * (current_best[0] + 1)
                 for next_cards in possible_adds_comm_cards:
-                    test_hand = game_state.player1_hand.union(next_cards)
+                    test_hand = player_hand.union(next_cards)
                     hand_rank = game_state.rank_poker_hand(test_hand)[0]
                     if hand_rank < current_best[0]:
                         hands[hand_rank] += 1
@@ -100,21 +113,18 @@ class GameTree:
         if class_to_add is not None:
             classes_so_far.add(class_to_add)
         # Add type of move that was played (same for both options)
-        if move[0] == FOLD_CODE:
-            classes_so_far.add('Fold')
-        elif move[0] == CHECK_CODE:
-            classes_so_far.add('Check')
-        elif move[0] == CALL_CODE:
-            classes_so_far.add('Call')
-        else:
-            if game_state.pool <= move[1]: # bet is about the pot size
-                adjective = 'Conservative'
-            elif game_state.pool * 2 <= move[2]: # bet is about 2 x the pot size
-                adjective = 'Moderate'
+        if evaluate_move:
+            if move[0] not in {BET_CODE, RAISE_CODE}:
+                classes_so_far.add(f'{NUM_TO_ACTION[move[0]]}')
             else:
-                adjective = 'Aggressive' # bet is otherwise very high
+                if game_state.pool <= move[1]:  # bet is about the pot size
+                    adjective = 'Conservative'
+                elif game_state.pool * 2 <= move[2]:  # bet is about 2 x the pot size
+                    adjective = 'Moderate'
+                else:
+                    adjective = 'Aggressive'  # bet is otherwise very high
+                classes_so_far.add(f'{adjective} {NUM_TO_ACTION[move[0]]}')
 
-            classes_so_far.add(f'{adjective} {NUM_TO_ACTION[move[0]]}')
         return classes_so_far
 
     def add_subtree(self, classes_of_action: set[str]) -> None:
