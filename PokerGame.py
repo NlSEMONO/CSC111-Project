@@ -25,6 +25,7 @@ CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
 
+
 class PokerGame:
     """
     Class representing the 'board'
@@ -89,7 +90,6 @@ class PokerGame:
             self.pool += move[1]
 
         self.turn = (self.turn + 1) % 2
-
 
     def next_stage(self) -> None:
         """
@@ -159,9 +159,10 @@ class PokerGame:
         """
         if p1_score[0] == p2_score[0]:
             if p1_score[0] == 2:
-                return 1 if p1_score[1] > p2_score[1] else 2 # tiebreaker for straight flush is the higher card
+                return 1 if p1_score[1] > p2_score[1] else 2  # tiebreaker for straight flush is the higher card
             elif p1_score[0] == 3:
-                self._check_kickers(p1_score[2], p2_score[2], 1, p2_score[1]) # same 4 of a kind required if it got to this point
+                self._check_kickers(p1_score[2], p2_score[2], 1,
+                                    p2_score[1])  # same 4 of a kind required if it got to this point
             elif p1_score[0] == 4:
                 if max(p1_score[1]) == max(p2_score[1]) and max(p1_score[2]) == max(p2_score[2]):
                     return 3
@@ -169,24 +170,28 @@ class PokerGame:
                     return 1 if max(p1_score[2]) > max(p2_score[2]) else 2
                 return 1 if max(p1_score[1]) > max(p2_score[1]) else 2
             elif p1_score[0] == 5:
-                return self._check_kickers(p1_score[1], p2_score[1], 5, []) # the _check_flush function already confines the search to only cards of the same suit
+                return self._check_kickers(p1_score[1], p2_score[1], 5,
+                                           [])  # the _check_flush function already confines the search to only cards of the same suit
             elif p1_score[0] == 6:
                 return 1 if p1_score[1] > p2_score[1] else 2
             elif p1_score[0] == 7:
                 if p1_score[1] == p2_score[1]:
-                    return self._check_kickers(p1_score[2], p2_score[2], 2, p2_score[1]) # required that they have same triple if it got to this point
+                    return self._check_kickers(p1_score[2], p2_score[2], 2, p2_score[
+                        1])  # required that they have same triple if it got to this point
                 else:
                     return 1 if p1_score[1] > p2_score[1] else 2
             elif p1_score[0] == 8:
                 if p1_score[1][0] == p2_score[1][0] and p1_score[1][1] == p2_score[1][1]:
-                    return self._check_kickers(p1_score[2], p2_score[2], 1, p2_score[1]) # required that they have same two pair if it got to this point
+                    return self._check_kickers(p1_score[2], p2_score[2], 1, p2_score[
+                        1])  # required that they have same two pair if it got to this point
                 elif p1_score[1][0] == p2_score[1][0]:
                     return 1 if p1_score[1][1] > p2_score[1][1] else 2
                 else:
                     return 1 if p1_score[1][0] > p2_score[1][0] else 2
             elif p1_score[0] == 9:
                 if p1_score[1] == p2_score[1]:
-                    return self._check_kickers(p1_score[2], p2_score[2], 3, p2_score[1]) # required that they have same pair if it got to this point
+                    return self._check_kickers(p1_score[2], p2_score[2], 3,
+                                               p2_score[1])  # required that they have same pair if it got to this point
                 else:
                     return 1 if p1_score[1] > p2_score[1] else 2
             else:
@@ -225,13 +230,13 @@ class PokerGame:
         reversed_cards.reverse()
 
         if straight_flush[0] and straight_flush[1] == 14:
-            return (1, -1) # not possible for two players to have royal flush; ignore tie
+            return (1, -1)  # not possible for two players to have royal flush; ignore tie
         elif straight_flush[0]:
-            return (2, straight_flush[1]) # need to find highest part of the straight flush
+            return (2, straight_flush[1])  # need to find highest part of the straight flush
         elif len(rank_counts[4]) > 0:
-            return (3, rank_counts[4], reversed_cards) # need all cards to determine who has better kicker
+            return (3, rank_counts[4], reversed_cards)  # need all cards to determine who has better kicker
         elif len(rank_counts[3]) > 0 and len(rank_counts[2]) > 0:
-            return (4, rank_counts[3], rank_counts[2]) # return all triples and pairs that can be created
+            return (4, rank_counts[3], rank_counts[2])  # return all triples and pairs that can be created
         elif is_flush[0]:
             return (5, is_flush[1])
         elif is_straight[0]:
@@ -244,7 +249,7 @@ class PokerGame:
             return (9, rank_counts[2], reversed_cards)
         else:
             if reversed_cards[-1][0] == 1:
-                reversed_cards.insert(0, (14, reversed_cards[len(reversed_cards) - 1][1])) # make aces the highest
+                reversed_cards.insert(0, (14, reversed_cards[len(reversed_cards) - 1][1]))  # make aces the highest
             return (10, reversed_cards)
 
     def _check_straight_flush(self, cards: list[Card]) -> tuple[bool, int]:
@@ -320,7 +325,7 @@ class PokerGame:
         """
         rank_counts = [0] * 15
         for card in cards:
-            if card[0] == 1: # ace also = 14
+            if card[0] == 1:  # ace also = 14
                 rank_counts[14] += 1
             else:
                 rank_counts[card[0]] += 1

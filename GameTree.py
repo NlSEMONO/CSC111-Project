@@ -28,7 +28,8 @@ class GameTree:
         self.classes_of_action = node_val
         self.subtrees = {}
 
-    def insert_moves(self, moves: list[Move], game_states: list[PokerGame], following: int, move_number: int = 0) -> None:
+    def insert_moves(self, moves: list[Move], game_states: list[PokerGame], following: int,
+                     move_number: int = 0) -> None:
         """
         Inserts a sequence of moves into the tree. Will insert the move at move_number into a new subtree or current
         subtree of appropriate height (ie. if move_number is 0, the move will go into a subtree of height 1, as that is
@@ -64,11 +65,31 @@ class GameTree:
         """
         classes_so_far = set()
         if following == game_state.turn:
+            # Kind of confused on this part: how r we always sure that it is player1's turn
             current_best = game_state.rank_poker_hand(game_state.player1_hand)
             if 'High Card' == NUM_TO_POKER_HAND[current_best[0]]:
                 classes_so_far.add(f'High Card {current_best[1]} in hand')
-
-        return set()
+            else:
+                classes_so_far.add(f'{NUM_TO_POKER_HAND[current_best[0]]} in hand')
+            for i in range(1, 11):  # Add strong poker hands that the player can threaten
+                if i < current_best[0]:
+                    classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} is threat')
+        else:
+            following_best = game_state.rank_poker_hand(game_state.player2_hand)
+            for i in range(1, 11):
+                if i < following_best[0]:
+                    classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} is threat')
+        # Add type of move that was played (same for both options)
+        if move == Move.Fold:
+            classes_so_far.add('Fold')
+        elif move == Move.Check:
+            classes_so_far.add('Check')
+        elif move == Move.Call:
+            classes_so_far.add('Call')
+        elif move == Move.Raise:
+            classes_so_far.add('Raise')
+            classes_so_far.add(f'Raise size: {Move.Raise[1]}')
+        return classes_so_far
 
     def add_subtree(self, classes_of_action: set[str]) -> None:
         """
