@@ -138,6 +138,15 @@ class Player:
         """
         raise NotImplementedError
 
+    def reset_player(self) -> float:
+        """
+        Resets the players actions for this round
+        """
+        self.bet_this_round = 0
+        self.has_moved = False
+        self.has_raised = False
+        self.has_folded = False
+
     def move_fold(self) -> tuple[int, int]:
         """
         Player folds
