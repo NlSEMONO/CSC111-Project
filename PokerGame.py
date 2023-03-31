@@ -20,6 +20,10 @@ NUM_TO_SUIT = {1: 'Spades', 2: 'Hearts', 3: 'Clubs', 4: 'Diamonds'}
 NUM_TO_POKER_HAND = {1: 'Royal Flush', 2: 'Straight Flush', 3: 'Four of a Kind', 4: 'Full House',
                      5: 'Flush', 6: 'Straight', 7: 'Three of a Kind', 8: 'Two Pair', 9: 'Pair', 10: 'High Card'}
 FOLD_CODE = 0
+CHECK_CODE = 1
+CALL_CODE = 2
+BET_CODE = 3
+RAISE_CODE = 4
 
 class PokerGame:
     """
@@ -78,10 +82,10 @@ class PokerGame:
         else:
             self.player2_moves.append(move)
 
-        # add raise amount
-        if self.last_bet != move[1] and move[1] > 0:
-            self.last_bet += move[1]
-        if move[1] > 0:
+        if move[0] == RAISE_CODE or move[0] == BET_CODE:
+            self.last_bet = move[1]
+            self.pool += move[1] - self.last_bet
+        elif move[0] == CALL_CODE:
             self.pool += move[1]
 
         self.turn = (self.turn + 1) % 2
@@ -316,9 +320,10 @@ class PokerGame:
         """
         rank_counts = [0] * 15
         for card in cards:
-            rank_counts[card[0]] += 1
             if card[0] == 1: # ace also = 14
                 rank_counts[14] += 1
+            else:
+                rank_counts[card[0]] += 1
         pattern_counts = {2: [], 3: [], 4: []}
         for i in range(14, -1, -1):
             if (rank_counts[i] - 2 > 0 and len(pattern_counts[rank_counts[i]]) == 0) or rank_counts[i] == 2:

@@ -5,6 +5,7 @@ import random
 NUM_TO_ACTION = {Player.FOLD_CODE: 'Fold', Player.CHECK_CODE: 'Check', Player.CALL_CODE: 'Call',
                  Player.BET_CODE: 'Bet', Player.RAISE_CODE: 'Raise'}
 
+
 def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
     """
     Simulates a round of poker
@@ -12,8 +13,17 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
     dealer = random.randint(1, 2)
     game = PokerGame()
     turn_order = [player1 if dealer == 1 else player2, player2 if dealer == 1 else player1]
-    corresponding_hand = [1 if dealer == 1 else 2, 2 if dealer == 1 else 1]
+    corresponding_hand = [1, 2]
     game.next_stage()
+    p1_initial_cost = int((1 / 200) * turn_order[0].balance)
+    p2_initial_cost = int((1 / 100) * turn_order[1].balance)
+    game.pool += p1_initial_cost
+    game.pool += p2_initial_cost
+    turn_order[0].balance -= p1_initial_cost
+    turn_order[0].bet_this_round = p1_initial_cost
+    turn_order[1].bet_this_round = p2_initial_cost
+    turn_order[1].balance -= p2_initial_cost
+    game.last_bet = p2_initial_cost
 
     while game.check_winner() is None:
         # print(f'{game.last_bet} {game.community_cards} {game.stage}')
@@ -37,9 +47,9 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
     return game
 
 
-for i in range(100):
-    p1 = Player.TestingPlayer(100)
-    p2 = Player.NaivePlayer(100)
+for i in range(10):
+    p1 = Player.TestingPlayer(10000)
+    p2 = Player.NaivePlayer(10000)
     simulated_game = run_round(p1, p2)
     print(f'Player {simulated_game.winner} has won the game and {simulated_game.pool} currency!')
     print(simulated_game)
