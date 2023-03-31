@@ -14,6 +14,7 @@ CHECK_CODE = 1
 CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
+ALL_IN_CODE = 5
 
 #STATICS FOR HAND WEIGHTING (play around with these not sure) (not used atm)
 LOG_CNST = 10
@@ -34,9 +35,7 @@ class Player:
         NOTE: GAME TREE HAS NOT BEEN IMPLEMENTED ***
     """
     bet_this_round: int
-    balance: float
-    betting_percentage: Optional[float] = 25
-    raising_percentage: Optional[float] = 25
+    balance: int
     has_moved: bool
     has_raised: bool
     has_folded: bool
@@ -67,8 +66,20 @@ class Player:
         Preconditions:
             - player_num == 1 or player_num == 2
 
+
         1 - 'button' pair - ie. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or better
         2 - non-button pair
+
+
+        1 - Pair
+        2 - Straight flush
+        3 - both cards jack or higher or flush/straight draw
+        4 - nothing special
+
+        1 - 'button' pair - ie. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or better
+          - second element of tuple represents type of button hand
+        2 - non-button pair
+
         """
         if hand[0][0] == hand[1][0] or hand[0][0] == 1: # same rank; a pair or ace in hand
             return 1
@@ -124,6 +135,7 @@ class Player:
             - bet <= self.balance and bet > 0
         """
         self.bet_this_round = bet
+        self.balance -= bet
         return (BET_CODE, bet)
 
     def move_raise(self, betraise: int) -> tuple[int, int]:
@@ -131,6 +143,7 @@ class Player:
         Player raises bet
             - betraise <= self.balance and betraise > self.bet_this_round
         """
+        self.balance -= (betraise - self.bet_this_round)
         self.bet_this_round = betraise
         self.has_raised = True
         return (RAISE_CODE, betraise)
@@ -146,25 +159,19 @@ class Player:
         Player calls
         """
         pool_contribution = last_bet - self.bet_this_round
+        self.balance -= pool_contribution
+
         self.bet_this_round = last_bet
         return (CALL_CODE, pool_contribution)
 
-    def _weight_hand(self, rank: int) -> float:
+    def move_all_in(self) -> tuple[int, int]:
         """
-        Weights hand relative to how possible it is to get a given hand in relation to chance to win.
-        Not exactly accurate (esp at the bottom -- pairs) However in terms of pairs it will default to the last
-        part of the if statement.
-        Preconditions:
-            - rank >= 1 and rank <= 10
+        Player calls
         """
-        if rank == 1: #approx hand weighting -- naive
-            return 1
-        else:
-            mod = 11 - rank
-            if rank <= 6:
-                return 2*(math.log(mod) + 0.1) / MOD_LOG
-            else:
-                return 2*(math.log(mod) + 0.1) / MOD_LOG*1.5
+        bet = self.balance
+        self.bet_this_round += bet
+        self.balance = 0
+        return (ALL_IN_CODE, bet)
 
 
 class CheckPlayer(Player):
@@ -339,8 +346,8 @@ class NaivePlayer(Player):
         3: Bet
         4: Raise
         """
-        if game_state.stage == 1:
-            self.has_moved = True
+        self.has_moved = True
+        if game_state.stage == 1:  # different algorithm for pre-flop
             if player_num == 1:
                 hand = list(game_state.player1_hand)
             else:
@@ -358,10 +365,37 @@ class NaivePlayer(Player):
                 return self.move_call(game_state.last_bet)
 
         win_prob = self.win_probability(game_state, player_num)
-
-        self.has_moved = True
-        if win_prob >= 0.5: #safe betting
+        print(win_prob)
+        if win_prob >= 0.95:  # all in if win is basically guaranteed
+            bet_amount = int(self.balance)
+            if game_state.last_bet == 0:
+                return self.move_bet(bet_amount)
+            else:
+                return self.move_raise(bet_amount)
+        elif win_prob >= 0.5:  # safe betting
             bet_amount = int(self.bet_size(game_state, win_prob))
+            if game_state.last_bet == 0:
+                return self.move_bet(bet_amount)
+            elif game_state.last_bet > (game_state.pool - game_state.last_bet) * (1 - win_prob):  # their bet exceeds
+                # our expectation to win the game
+                return self.move_fold()
+            else:  # call their 'bluff'
+                return self.move_call(game_state.last_bet)
+        elif game_state.last_bet == 0:
+            return self.move_check()
+        else:  # fold if under threat
+            return self.move_fold()
+
+
+        bet_amount = int(self.balance) if win_prob >= 0.95 else int(self.bet_size(game_state, win_prob))
+        if bet_amount >= self.balance:
+            return self.move_all_in()
+        if win_prob >= 0.95: # all in if win is basically guaranteed
+            if game_state.last_bet == 0:
+                return self.move_bet(bet_amount)
+            else:
+                return self.move_raise(bet_amount)
+        if win_prob >= 0.5: #safe betting
             if self.bet_this_round == 0:
                 return self.move_bet(bet_amount)
             elif game_state.last_bet > (game_state.pool - game_state.last_bet) * (1 - win_prob): # their bet exceeds
@@ -388,7 +422,7 @@ class NaivePlayer(Player):
                 return game_state.last_bet
 
         # typically, you bet proportionally to the pot based on how likely you think you are to win
-        bet_amount = min(self.balance, game_state.pool * (1 / (1 - win_prob_threshold)))
+        bet_amount = min(self.balance, int(game_state.pool * (1 / (1 - win_prob_threshold))))
         return bet_amount
 
 
