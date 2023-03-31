@@ -5,6 +5,7 @@ A naive player who will bet/raise when they have a good hand, and will fold if t
 from Player import Player
 from PokerGame import Card, PokerGame
 
+
 class NaivePlayer(Player):
     """
     Player who bets/raises when they have a good hand and folds otherwise (also is 'scared' of big bets)
@@ -23,7 +24,12 @@ class NaivePlayer(Player):
         """
         self.has_moved = True
         if game_state.stage == 1: # different algorithm for pre-flop
-            how_good = self.rate_hand(game_state, player_num)
+            if player_num == 1:
+                hand = list(game_state.player1_hand)
+            else:
+                hand = list(game_state.player2_hand)
+            hand.sort()
+            how_good = self.rate_hand(hand)
             if how_good == 2 and game_state.last_bet > self.bet_this_round:
                 return self.move_fold()
             elif how_good == 2 and game_state.last_bet == self.bet_this_round:
@@ -35,7 +41,14 @@ class NaivePlayer(Player):
                 return self.move_call(game_state.last_bet)
 
         win_prob = self.win_probability(game_state, player_num)
-        if win_prob >= 0.5: #safe betting
+        print(win_prob)
+        if win_prob >= 0.95: # all in if win is basically guaranteed
+            bet_amount = int(self.balance)
+            if game_state.last_bet == 0:
+                return self.move_bet(bet_amount)
+            else:
+                return self.move_raise(bet_amount)
+        elif win_prob >= 0.5: #safe betting
             bet_amount = int(self.bet_size(game_state, win_prob))
             if game_state.last_bet == 0:
                 return self.move_bet(bet_amount)
@@ -44,7 +57,7 @@ class NaivePlayer(Player):
                 return self.move_fold()
             else: # call their 'bluff'
                 return self.move_call(game_state.last_bet)
-        elif game_state.last_bet == 0: # check if not under threat
+        elif game_state.last_bet == 0:
             return self.move_check()
         else: # fold if under threat
             return self.move_fold()
@@ -81,7 +94,7 @@ class NaivePlayer(Player):
                 return game_state.last_bet
 
         # typically, you bet proportionally to the pot based on how likely you think you are to win
-        bet_amount = min(self.balance, game_state.pool * (1 - win_prob_threshold))
+        bet_amount = min(self.balance, game_state.pool * (1 / (1 - win_prob_threshold)))
         return bet_amount
 
 

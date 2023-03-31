@@ -1,4 +1,5 @@
 from PokerGame import PokerGame
+from NaivePlayer import NaivePlayer
 import Player
 import random
 
