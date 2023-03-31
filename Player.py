@@ -94,6 +94,15 @@ class Player:
 
         return 2
 
+    def reset_player(self) -> None:
+        """
+        Resets the players actions for this round
+        """
+        self.bet_this_round = 0
+        self.has_moved = False
+        self.has_raised = False
+        self.has_folded = False
+
     def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
         returns the win probability
@@ -365,15 +374,15 @@ class NaivePlayer(Player):
                 return self.move_call(game_state.last_bet)
 
         win_prob = self.win_probability(game_state, player_num)
-        print(win_prob)
+        bet_amount = int(self.balance) if win_prob >= 0.95 else int(self.bet_size(game_state, win_prob))
+        if bet_amount >= self.balance:
+            return self.move_all_in()
         if win_prob >= 0.95:  # all in if win is basically guaranteed
-            bet_amount = int(self.balance)
             if game_state.last_bet == 0:
                 return self.move_bet(bet_amount)
             else:
                 return self.move_raise(bet_amount)
         elif win_prob >= 0.5:  # safe betting
-            bet_amount = int(self.bet_size(game_state, win_prob))
             if game_state.last_bet == 0:
                 return self.move_bet(bet_amount)
             elif game_state.last_bet > (game_state.pool - game_state.last_bet) * (1 - win_prob):  # their bet exceeds
@@ -384,29 +393,6 @@ class NaivePlayer(Player):
         elif game_state.last_bet == 0:
             return self.move_check()
         else:  # fold if under threat
-            return self.move_fold()
-
-
-        bet_amount = int(self.balance) if win_prob >= 0.95 else int(self.bet_size(game_state, win_prob))
-        if bet_amount >= self.balance:
-            return self.move_all_in()
-        if win_prob >= 0.95: # all in if win is basically guaranteed
-            if game_state.last_bet == 0:
-                return self.move_bet(bet_amount)
-            else:
-                return self.move_raise(bet_amount)
-        if win_prob >= 0.5: #safe betting
-            if self.bet_this_round == 0:
-                return self.move_bet(bet_amount)
-            elif game_state.last_bet > (game_state.pool - game_state.last_bet) * (1 - win_prob): # their bet exceeds
-                # our expectation to win the game
-                if game_state.stage == 4:
-                    return self.move_fold()
-            else: # call their 'bluff'
-                return self.move_call(game_state.last_bet)
-        elif game_state.last_bet == 0: # check if not under threat
-            return self.move_check()
-        else: # fold if under threat
             return self.move_fold()
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float, hand_quality: int = 0) -> float:

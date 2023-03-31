@@ -24,6 +24,7 @@ CHECK_CODE = 1
 CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
+ALL_IN_CODE = 5
 
 
 class PokerGame:
@@ -84,8 +85,11 @@ class PokerGame:
             self.player2_moves.append(move)
 
         if move[0] == RAISE_CODE or move[0] == BET_CODE:
+            self.pool += (move[1] - self.last_bet)
             self.last_bet = move[1]
-            self.pool += move[1] - self.last_bet
+        elif move[0] == ALL_IN_CODE:
+            self.pool += move[1]
+            self.last_bet = move[1]
         elif move[0] == CALL_CODE:
             self.pool += move[1]
 
