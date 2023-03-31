@@ -67,35 +67,27 @@ class Player:
         Preconditions:
             - player_num == 1 or player_num == 2
 
-        1 - Pair
-        2 - Straight flush
-        3 - both cards jack or higher or flush/straight draw
-        4 - nothing special
+        1 - 'button' pair - ie. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or better
+        2 - non-button pair
         """
         if player_num == 1:
             hand = list(game_state.player1_hand)
         else:
             hand = list(game_state.player2_hand)
+        hand.sort()
 
-        if hand[0][0] == 1:
-            hand.append((14, hand[0][1]))
-        if hand[1][0] == 1:
-            hand.append((14, hand[1][1]))
-
-        straight_chance, sorted_hand = False, sorted(hand)
-        if hand[0][0] != hand[1][0] and (any(sorted_hand[0][0] + 1 == card[0] for card in sorted_hand[1:]) or any(
-                sorted_hand[-1][0] - 1 == card[0] for card in sorted_hand[:-1])):
-            straight_chance = True
-
-        if hand[0][0] == hand[1][0]:  # pair
+        if hand[0][0] == hand[1][0] or hand[0][0] == 1: # same rank; a pair or ace in hand
             return 1
-        if hand[0][1] == hand[1][1] and straight_chance:  # straight + flush
-            return 2
-        if hand[0][1] == hand[1][1] or straight_chance or (sorted_hand[-1][0] > 10 or sorted_hand[-2][0] > 10):
-            # highest 2 cards are jack or better or flush or straight
-            return 3
-        else:  # nothing special
-            return 4
+
+        if hand[0][1] == hand[1][1]: # same suit
+            if hand[1][0] >= 11: # suited royals = button hand
+                return 1
+        if hand[1][0] == 13 and hand[0][1] >= 6: # unsuited king and six or better
+            return 1
+        elif hand[1][0] >= 10 and hand[0][0] >= 8:
+            return 1
+
+        return 2
 
     def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
@@ -173,10 +165,11 @@ class Player:
         """
         Player calls
         """
+        pool_contribution = last_bet - self.bet_this_round
         self.bet_this_round = last_bet
-        return (CALL_CODE, last_bet)
+        return (CALL_CODE, pool_contribution)
 
-    def _pre_flop(self, hand: list[int]) -> float:
+    def _pre_flop(self, hand: list[Card]) -> float:
         chance = 0.295
         # ace config
         if hand[0][0] == 1:
@@ -309,12 +302,8 @@ class CheckPlayer(Player):
         Will always bet on first turn
         """
         self.has_moved = True
-        if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
-            return self.move_bet(1)
-        elif game_state.stage == 1 and self.bet_this_round == 0:
+        if game_state.stage == 1 and game_state.last_bet != self.bet_this_round:
             return self.move_call(game_state.last_bet)
-        elif game_state.last_bet > 0:
-            return self.move_fold()
         else:
             return self.move_check()
 
@@ -330,7 +319,7 @@ class TestingPlayer(Player):
         """
         self.has_moved = True
         if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
-            return self.move_bet(2)
+            return self.move_bet(int(0.025 * self.balance))
         elif game_state.last_bet > 0:
             return self.move_call(game_state.last_bet)
         else:
@@ -476,62 +465,33 @@ class NaivePlayer(Player):
         if game_state.stage == 1:
             self.has_moved = True
             how_good = self.rate_hand(game_state, player_num)
-            bet = int(self.bet_size(game_state, 0, how_good))
-            if self.has_raised or bet == game_state.last_bet:
+            if how_good == 2 and game_state.last_bet > self.bet_this_round:
+                return self.move_fold()
+            elif how_good == 2 and game_state.last_bet == self.bet_this_round:
                 return self.move_check()
-            return self.move_bet(bet) if game_state.last_bet == 0 else self.move_raise(bet)
+            bet = int(self.bet_size(game_state, 0, how_good))
+            if bet > game_state.last_bet:
+                return self.move_raise(bet)
+            else:
+                return self.move_call(game_state.last_bet)
 
         win_prob = self.win_probability(game_state, player_num)
-        if not self.has_moved:
-            self.has_moved = True
-            if win_prob >= 0.92:
-                bet_amount = int(self.bet_size(game_state, win_prob) * 0.75)
-                if game_state.last_bet == 0:
-                    self.move_bet(bet_amount)
-                    return (3, bet_amount)
-                elif game_state.last_bet >= bet_amount:
-                    self.move_call(game_state.last_bet)
-                    return (2, game_state.last_bet)
-                else:
-                    self.has_raised = True
-                    return (4, bet_amount)
-            elif win_prob >= 0.75:
-                bet_amount = int(self.bet_size(game_state, 0.75) * 0.75)
-                if game_state.last_bet == 0:
-                    self.move_bet(bet_amount)
-                elif game_state.last_bet >= bet_amount:
-                    self.move_call(game_state.last_bet)
-                    return (2, game_state.last_bet)
-                else:
-                    self.has_raised = True
-                    return (4, bet_amount)
-                return (3, bet_amount)
-            elif win_prob >= 0.5: #safe betting
-                bet_amount = int(self.bet_size(game_state, 0.5) * 0.25)
-                if game_state.last_bet == 0:
-                    self.move_bet(bet_amount)
-                    return (3, bet_amount)
-                elif game_state.last_bet >= bet_amount:
-                    if game_state.stage == 4:
-                        self.move_fold()
-                        return (0, 0)
-                    self.move_check()
-                    return (1, 0)
-                else:
-                    self.move_call(game_state.last_bet)
-                    return (2, game_state.last_bet)
-            elif win_prob >= 0.1: #pass
+
+        self.has_moved = True
+        if win_prob >= 0.5: #safe betting
+            bet_amount = int(self.bet_size(game_state, win_prob))
+            if self.bet_this_round == 0:
+                return self.move_bet(bet_amount)
+            elif game_state.last_bet > (game_state.pool - game_state.last_bet) * (1 - win_prob): # their bet exceeds
+                # our expectation to win the game
                 if game_state.stage == 4:
-                    self.move_fold()
-                    return (0, 0)
-                self.move_check()
-                return (1, 0)
-            else: #instant fold
-                self.move_fold()
-                return(0, 0)
-        else:
-            self.move_fold()
-            return (0, 0)
+                    return self.move_fold()
+            else: # call their 'bluff'
+                return self.move_call(game_state.last_bet)
+        elif game_state.last_bet == 0: # check if not under threat
+            return self.move_check()
+        else: # fold if under threat
+            return self.move_fold()
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float, hand_quality: int = 0) -> float:
         """
@@ -541,11 +501,10 @@ class NaivePlayer(Player):
         # Determine a bet size based on the current balance and win probability
         if game_state.stage == 1:
             if hand_quality == 1:
-                return 0.8 * self.balance
-            elif hand_quality == 2:
-                return 0.04 * self.balance
+                return 0.025 * self.balance
             else:
                 return game_state.last_bet
 
-        bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
+        # typically, you bet proportionally to the pot based on how likely you think you are to win
+        bet_amount = min(self.balance, game_state.pool * (1 - win_prob_threshold))
         return bet_amount
