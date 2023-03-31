@@ -202,11 +202,11 @@ class PokerGame:
     def _check_kickers(self, p1_cards: list[Card], p2_cards: list[Card], kickers_allowed: int,
                        blackist: list[int]) -> int:
         """
-        Evaluates if p1_cards or p2_cards are stronger by kickers_allowed kickers.
+        Evaluates if p1_cards or p2_cards are stronger by kickers_allowed kickers. Ignores 'blacklisted' ranks.
         """
         i = 0
         buffer = 0
-        while i < kickers_allowed and p1_cards[i + buffer][0] == p2_cards[i + buffer][0]:
+        while i < kickers_allowed and i + buffer < len(p1_cards) and p1_cards[i + buffer][0] == p2_cards[i + buffer][0]:
             if p1_cards[i + buffer][0] in blackist:
                 buffer += 1
             else:
@@ -227,6 +227,10 @@ class PokerGame:
         is_straight = self._check_straight(all_cards)
         rank_counts = self._count_ranks(all_cards)
         reversed_cards = all_cards.copy()
+        i = 0
+        while i < len(all_cards) and all_cards[i][0] == 1:
+            reversed_cards.append((14, all_cards[i][1]))  # add aces to the end of reversed cards
+            i += 1
         reversed_cards.reverse()
 
         if straight_flush[0] and straight_flush[1] == 14:
@@ -248,8 +252,6 @@ class PokerGame:
         elif len(rank_counts[2]) > 0:
             return (9, rank_counts[2], reversed_cards)
         else:
-            if reversed_cards[-1][0] == 1:
-                reversed_cards.insert(0, (14, reversed_cards[len(reversed_cards) - 1][1]))  # make aces the highest
             return (10, reversed_cards)
 
     def _check_straight_flush(self, cards: list[Card]) -> tuple[bool, int]:

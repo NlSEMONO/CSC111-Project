@@ -2,7 +2,7 @@
 File for game trees: a tree that represents all the collective move sequences played over many simulated poker games
 """
 from __future__ import annotations
-from typing import Optional
+from typing import Any, Optional
 from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND
 from GameRunner import NUM_TO_ACTION
 
@@ -12,6 +12,7 @@ CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
 
+THREAT_CONSTANT = 6
 
 class GameTree:
     """
@@ -71,31 +72,33 @@ class GameTree:
         poker hands that can threaten the player who we are following and the type of move that was played.
         """
         classes_so_far = set()
+        current_best = game_state.rank_poker_hand(game_state.player1_hand)
+        used_cards = game_state.community_cards.union(game_state.player1_hand)
         if following == game_state.turn:
-            current_best = game_state.rank_poker_hand(game_state.player1_hand)
+            # current best poker hand player can threaten
             if 'High Card' == NUM_TO_POKER_HAND[current_best[0]]:
                 classes_so_far.add(f'High Card {current_best[1]} in hand')
             else:
                 classes_so_far.add(f'{NUM_TO_POKER_HAND[current_best[0]]} in hand')
-            used_cards = game_state.community_cards.union(game_state.player1_hand)
-            all_hands = self._generate_card_combos(used_cards, set(), 1)
-            for hand in all_hands:  # Add strong poker hands that the player can threaten
-                count = 0
-                hand_rank = game_state.rank_poker_hand(hand)
-                if hand_rank[0] >= 4:
-                    count += 1
-                if count >= 10:
-                    classes_so_far.add(f'{NUM_TO_POKER_HAND[hand_rank[0]]} can be threatened')
-        else:
-            used_cards = game_state.community_cards.union(game_state.player1_hand)
-            all_hands = self._generate_card_combos(used_cards, set(), 1)
-            for hand in all_hands:  # Add strong poker hands that the player can threaten
-                count = 0
-                hand_rank = game_state.rank_poker_hand(hand)
-                if hand_rank[0] >= 4:
-                    count += 1
-                if count >= 10:
-                    classes_so_far.add(f'{NUM_TO_POKER_HAND[hand_rank[0]]} can be threatened')
+            # potential poker hands the player can make in later in the game (if lucky)
+            if game_state.stage != 4:
+                possible_adds_comm_cards = self._generate_card_combos(used_cards, set(), 1 - len(game_state.community_cards))
+                hands = [0] * (current_best[0] + 1)
+                for next_cards in possible_adds_comm_cards:
+                    test_hand = game_state.player1_hand.union(next_cards)
+                    hand_rank = game_state.rank_poker_hand(test_hand)[0]
+                    if hand_rank < current_best[0]:
+                        hands[hand_rank] += 1
+                for i in range(1, len(hands)):
+                    hands[i] = hands[i] + hands[i - 1]
+                i = 1
+                while i < len(hands) and hands[i] <= len(possible_adds_comm_cards) / THREAT_CONSTANT:
+                    i += 1
+                if i < len(hands):
+                    classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} if lucky')
+        class_to_add = self._determine_threats(game_state, used_cards, current_best)
+        if class_to_add is not None:
+            classes_so_far.add(class_to_add)
         # Add type of move that was played (same for both options)
         if move[0] == FOLD_CODE:
             classes_so_far.add('Fold')
@@ -104,7 +107,14 @@ class GameTree:
         elif move[0] == CALL_CODE:
             classes_so_far.add('Call')
         else:
-            classes_so_far.add(f'{NUM_TO_ACTION[move[0]]}')
+            if game_state.pool <= move[1]: # bet is about the pot size
+                adjective = 'Conservative'
+            elif game_state.pool * 2 <= move[2]: # bet is about 2 x the pot size
+                adjective = 'Moderate'
+            else:
+                adjective = 'Aggressive' # bet is otherwise very high
+
+            classes_so_far.add(f'{adjective} {NUM_TO_ACTION[move[0]]}')
         return classes_so_far
 
     def add_subtree(self, classes_of_action: set[str]) -> None:
@@ -112,6 +122,24 @@ class GameTree:
         Adds a new subtree to the tree's list of subtrees
         """
         self.subtrees[classes_of_action] = GameTree(classes_of_action)
+
+    def _determine_threats(self, game_state: PokerGame, used_cards: set[Card], current_best: tuple[Any, ...]) -> Optional[str]:
+        all_hands = self._generate_card_combos(used_cards, set(), 1)
+        better_hands = [0] * (current_best[0] + 1)
+        for hand in all_hands:  # determine threatening hands the opponent can have
+            hand_rank = game_state.rank_poker_hand(hand)
+            if hand_rank[0] > current_best[0] or game_state.determine_winner(current_best, hand_rank):
+                better_hands[hand_rank[0]] += 1
+        for i in range(1, len(better_hands)):
+            better_hands[i] = better_hands[i] + better_hands[i - 1]
+        i = 1
+        while i < len(better_hands) and better_hands[i] <= len(all_hands) / THREAT_CONSTANT:
+            # take the highest poker hand that poses a 'legitimate risk' ie. >=16.7% of the opponent having it or better
+            i += 1
+        if i < len(better_hands):
+            return f'{NUM_TO_POKER_HAND[i]} is threat'
+        else:
+            return None
 
     def _generate_card_combos(self, used_cards: set[Card], cards_so_far: set[Card], level_to_stop: int) -> list[
         set[Card]]:

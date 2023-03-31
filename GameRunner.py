@@ -1,5 +1,6 @@
 from PokerGame import PokerGame
 import Player
+from NaivePlayer import NaivePlayer
 import random
 
 NUM_TO_ACTION = {Player.FOLD_CODE: 'Fold', Player.CHECK_CODE: 'Check', Player.CALL_CODE: 'Call',
@@ -47,9 +48,9 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
     return game
 
 
-for i in range(10):
-    p1 = Player.TestingPlayer(10000)
-    p2 = Player.NaivePlayer(10000)
+for i in range(100):
+    p1 = NaivePlayer(10000)
+    p2 = NaivePlayer(10000)
     simulated_game = run_round(p1, p2)
     print(f'Player {simulated_game.winner} has won the game and {simulated_game.pool} currency!')
     print(simulated_game)
