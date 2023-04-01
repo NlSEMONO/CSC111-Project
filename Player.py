@@ -1,10 +1,11 @@
 """
 DeepPoker Project
-
 File for ALL player classes, which represent different playstyles for playing poker
 """
 from typing import Optional
+
 from PokerGame import PokerGame, Card
+import math
 
 #STATICS FOR MOVE CODES
 FOLD_CODE = 0
@@ -12,6 +13,7 @@ CHECK_CODE = 1
 CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
+ALL_IN_CODE = 5
 
 #STATICS FOR HAND WEIGHTING (play around with these not sure) (not used atm)
 LOG_CNST = 10
@@ -28,13 +30,10 @@ class Player:
         has_raised
         has_folded
         total_bluffs
-
         NOTE: GAME TREE HAS NOT BEEN IMPLEMENTED ***
     """
     bet_this_round: int
-    balance: float
-    betting_percentage: Optional[float] = 25
-    raising_percentage: Optional[float] = 25
+    balance: int
     has_moved: bool
     has_raised: bool
     has_folded: bool
@@ -54,79 +53,64 @@ class Player:
         The move number correlates to the type of move the player makes.
         Bet is the bet amount.
         Moves:
-
         """
         raise NotImplementedError
 
-    def rate_hand(self, game_state: PokerGame, player_num: int) -> int:
+    def rate_hand(self, hand: list[Card]) -> int:
         """
         Rates how good an initial hand is based on possible poker hands it can make
-
         Preconditions:
             - player_num == 1 or player_num == 2
-
+        1 - 'button' pair - ie. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or better
+        2 - non-button pair
         1 - Pair
         2 - Straight flush
         3 - both cards jack or higher or flush/straight draw
         4 - nothing special
+        1 - 'button' pair - ie. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or better
+          - second element of tuple represents type of button hand
+        2 - non-button pair
         """
-        if player_num == 1:
-            hand = list(game_state.player1_hand)
-        else:
-            hand = list(game_state.player2_hand)
-
-        if hand[0][0] == 1:
-            hand.append((14, hand[0][1]))
-        if hand[1][0] == 1:
-            hand.append((14, hand[1][1]))
-
-        straight_chance, sorted_hand = False, sorted(hand)
-        if hand[0][0] != hand[1][0] and (any(sorted_hand[0][0] + 1 == card[0] for card in sorted_hand[1:]) or any(
-                sorted_hand[-1][0] - 1 == card[0] for card in sorted_hand[:-1])):
-            straight_chance = True
-
-        if hand[0][0] == hand[1][0]:  # pair
+        if hand[0][0] == hand[1][0] or hand[0][0] == 1: # same rank; a pair or ace in hand
             return 1
-        if hand[0][1] == hand[1][1] and straight_chance:  # straight + flush
-            return 2
-        if hand[0][1] == hand[1][1] or straight_chance or (sorted_hand[-1][0] > 10 or sorted_hand[-2][0] > 10):
-            # highest 2 cards are jack or better or flush or straight
-            return 3
-        else:  # nothing special
-            return 4
+
+        if hand[0][1] == hand[1][1]: # same suit
+            if hand[1][0] >= 11: # suited royals = button hand
+                return 1
+        if hand[1][0] == 13 and hand[0][1] >= 6: # unsuited king and six or better
+            return 1
+        elif hand[1][0] >= 10 and hand[0][0] >= 8:
+            return 1
+
+        return 2
+
+    def reset_player(self) -> None:
+        """
+        Resets the players actions for this round
+        """
+        self.bet_this_round = 0
+        self.has_moved = False
+        self.has_raised = False
+        self.has_folded = False
 
     def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
-        Calculates current win probability given the information at hand.
-        Note: Nested loops run maximum of approx 2.6k iterations. These are only used for generating simulations, so
-        should not effect overall run of main code.
-        Preconditions:
-            - player_num == 1 or player_num == 2
+        returns the win probability
         """
-        # turn stuff to list and then make a clone for computation (hypothetical)
         if player_num == 1:
-            hand = list(game_state.player1_hand)
-            clone_game_state = PokerGame()
-            clone_game_state.player1_hand = game_state.player1_hand # for computation
+            hand = game_state.player1_hand
         else:
-            hand = list(game_state.player2_hand)
-            clone_game_state = PokerGame()
-            clone_game_state.player1_hand = game_state.player2_hand # for computation
-        clone_game_state.community_cards = game_state.community_cards
+            hand = game_state.player2_hand
 
-        total = 0
+        my_score = game_state.rank_poker_hand(hand)
+        used = game_state.community_cards.union(hand)
+        all_opponent_hands = [hand for hand in _generate_card_combos(used, set(), 1) if self.rate_hand(list(hand)) == 1]
+        better_hands = 0
+        for hand in all_opponent_hands:
+            if game_state.determine_winner(my_score, game_state.rank_poker_hand(hand)) == 1:
+                better_hands += 1
 
-        if game_state.stage == 1: #Pre flop
-            return self._pre_flop(hand)
-
-        elif game_state.stage == 2: #Flop
-            return self._flop(game_state, clone_game_state)
-
-        elif game_state.stage == 3: #Turn
-            return self._turn(game_state, clone_game_state)
-
-        else: #River
-            return self._river(game_state, clone_game_state)
+        return better_hands / len(all_opponent_hands)
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
@@ -135,15 +119,6 @@ class Player:
         I think the bet size should also be determined by win probability
         """
         raise NotImplementedError
-
-    def reset_player(self) -> float:
-        """
-        Resets the players actions for this round
-        """
-        self.bet_this_round = 0
-        self.has_moved = False
-        self.has_raised = False
-        self.has_folded = False
 
     def move_fold(self) -> tuple[int, int]:
         """
@@ -159,6 +134,7 @@ class Player:
             - bet <= self.balance and bet > 0
         """
         self.bet_this_round = bet
+        self.balance -= bet
         return (BET_CODE, bet)
 
     def move_raise(self, betraise: int) -> tuple[int, int]:
@@ -166,6 +142,7 @@ class Player:
         Player raises bet
             - betraise <= self.balance and betraise > self.bet_this_round
         """
+        self.balance -= (betraise - self.bet_this_round)
         self.bet_this_round = betraise
         self.has_raised = True
         return (RAISE_CODE, betraise)
@@ -180,128 +157,20 @@ class Player:
         """
         Player calls
         """
+        pool_contribution = last_bet - self.bet_this_round
+        self.balance -= pool_contribution
+
         self.bet_this_round = last_bet
-        return (CALL_CODE, last_bet)
+        return (CALL_CODE, pool_contribution)
 
-    def _pre_flop(self, hand: list[int]) -> float:
-        chance = 0.295
-        # ace config
-        if hand[0][0] == 1:
-            hand.append((14, hand[0][1]))
-        if hand[1][0] == 1:
-            hand.append((14, hand[1][1]))
-
-        straight_chance, sorted_hand = False, sorted(hand)
-        if hand[0][0] != hand[1][0] and (any(sorted_hand[0][0] + 1 == card[0] for card in sorted_hand[1:]) or any(
-                sorted_hand[-1][0] - 1 == card[0] for card in sorted_hand[:-1])):
-            straight_chance = True
-
-        if hand[0][0] == hand[1][0]:  # pairs (avg +20%)
-            chance += 0.2
-        if hand[0][1] == hand[1][1]:  # same suit (avg +3.5%)
-            chance += 0.035
-        if hand[0][1] == hand[1][1] and straight_chance:
-            # straight flush chance
-            chance += 0.07
-        if straight_chance:  # straight
-            chance += 0.02
-        maximumat = max(hand[0][0], hand[1][0])
-        chance += (maximumat * 2) / 100
-        chance += (5 + (min(hand[0][0], hand[1][0]) - 14)) / 100
-        return chance
-
-    def _flop(self, game_state: PokerGame, clone_game_state: PokerGame) -> float:
-        flop = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
-        total = 0
-        same = 0
-        current_best = game_state.rank_poker_hand(clone_game_state.player1_hand)
-        for i in range(1, 14):  # 47*46 iterations)
-            for j in range(1, 5):
-                if (i, j) not in clone_game_state.community_cards and (i, j) not in clone_game_state.player1_hand:
-                    clone_game_state.community_cards.add((i, j))
-                    for n in range(1, 14):
-                        for m in range(1, 5):
-                            if (n, m) not in clone_game_state.community_cards and (
-                            n, m) not in clone_game_state.player1_hand:
-                                clone_game_state.community_cards.add((n, m))
-                                rank = clone_game_state.rank_poker_hand(clone_game_state.player1_hand)
-                                rank_beat = clone_game_state.rank_poker_hand(set())
-                                if rank != rank_beat and rank != current_best:  # if it is better than the community cards
-                                    flop[rank[0]] += 1
-                                else:
-                                    same += 0
-                                clone_game_state.community_cards.remove((n, m))
-                    clone_game_state.community_cards.remove((i, j))
-        same = same * self._weight_hand(current_best[0])
-        total += same
-        for i in flop:
-            total += flop[i] * self._weight_hand(i)
-
-        return min((total / 2620), 1)
-
-    def _turn(self, game_state: PokerGame, clone_game_state: PokerGame) -> float:
-        flop = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
-        total = 0
-        same = 0
-        current_best = game_state.rank_poker_hand(clone_game_state.player1_hand)
-        for i in range(1, 14):
-            for j in range(1, 5):
-                if (i, j) not in clone_game_state.community_cards and (i, j) not in clone_game_state.player1_hand:
-                    clone_game_state.community_cards.add((i, j))
-                    rank = clone_game_state.rank_poker_hand(clone_game_state.player1_hand)
-                    rank_beat = clone_game_state.rank_poker_hand(set())
-                    if rank != rank_beat and rank != current_best:  # if it is better than the community cards
-                        flop[rank[0]] += 1
-                    else:
-                        same += 0
-                    flop[rank[0]] += 1
-                    clone_game_state.community_cards.remove((i, j))
-        same = same * self._weight_hand(current_best[0])
-        total += same
-        for i in flop:
-            total += flop[i] * self._weight_hand(i)
-        return min((total / 47), 1)
-
-    def _river(self, game_state: PokerGame, clone_game_state: PokerGame) -> float:
-        rank = clone_game_state.rank_poker_hand(clone_game_state.player1_hand)
-        rank_beat = clone_game_state.rank_poker_hand(set())
-        temp_player = set()
-        beat = 0
-        if rank == rank_beat:  # no improvements
-            return 0
-        else:
-            for i in range(1, 14):  # 45*44 iterations -- checks every possible hand opponent can have
-                for j in range(1, 5):
-                    if (i, j) not in game_state.community_cards and (i, j) not in clone_game_state.player1_hand:
-                        temp_player.add((i, j))
-                        for n in range(1, 14):
-                            for m in range(1, 5):
-                                if (n, m) not in game_state.community_cards and (
-                                n, m) not in clone_game_state.player1_hand and (n, m) not in temp_player:
-                                    temp_player.add((n, m))
-                                    rank_temp = game_state.rank_poker_hand(temp_player)
-                                    if game_state.determine_winner(rank, rank_temp) == 1:
-                                        beat += 1
-                                    temp_player.remove((n, m))
-                        temp_player.remove((i, j))
-            return min(beat / (45 * 44), 1)
-
-    def _weight_hand(self, rank: int) -> float:
+    def move_all_in(self) -> tuple[int, int]:
         """
-        Weights hand relative to how possible it is to get a given hand in relation to chance to win.
-        Not exactly accurate (esp at the bottom -- pairs) However in terms of pairs it will default to the last
-        part of the if statement.
-        Preconditions:
-            - rank >= 1 and rank <= 10
+        Player calls
         """
-        if rank == 1: #approx hand weighting -- naive
-            return 1
-        else:
-            mod = 11 - rank
-            if rank <= 6:
-                return 2*(math.log(mod) + 0.1) / MOD_LOG
-            else:
-                return 2*(math.log(mod) + 0.1) / MOD_LOG*1.5
+        bet = self.balance
+        self.bet_this_round += bet
+        self.balance = 0
+        return (ALL_IN_CODE, bet)
 
 
 class CheckPlayer(Player):
@@ -312,16 +181,11 @@ class CheckPlayer(Player):
     def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Always checks if there is no bet, and will fold otherwise
-
         Will always bet on first turn
         """
         self.has_moved = True
-        if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
-            return self.move_bet(1)
-        elif game_state.stage == 1 and self.bet_this_round == 0:
+        if game_state.stage == 1 and game_state.last_bet != self.bet_this_round:
             return self.move_call(game_state.last_bet)
-        elif game_state.last_bet > 0:
-            return self.move_fold()
         else:
             return self.move_check()
 
@@ -337,7 +201,7 @@ class TestingPlayer(Player):
         """
         self.has_moved = True
         if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
-            return self.move_bet(2)
+            return self.move_bet(int(0.025 * self.balance))
         elif game_state.last_bet > 0:
             return self.move_call(game_state.last_bet)
         else:
@@ -480,65 +344,45 @@ class NaivePlayer(Player):
         3: Bet
         4: Raise
         """
-        if game_state.stage == 1:
-            self.has_moved = True
-            how_good = self.rate_hand(game_state, player_num)
-            bet = int(self.bet_size(game_state, 0, how_good))
-            if self.has_raised or bet == game_state.last_bet:
+        self.has_moved = True
+        if game_state.stage == 1:  # different algorithm for pre-flop
+            if player_num == 1:
+                hand = list(game_state.player1_hand)
+            else:
+                hand = list(game_state.player2_hand)
+            hand.sort()
+            how_good = self.rate_hand(hand)
+            if how_good == 2 and game_state.last_bet > self.bet_this_round:
+                return self.move_fold()
+            elif how_good == 2 and game_state.last_bet == self.bet_this_round:
                 return self.move_check()
-            return self.move_bet(bet) if game_state.last_bet == 0 else self.move_raise(bet)
+            bet = int(self.bet_size(game_state, 0, how_good))
+            if bet > game_state.last_bet:
+                return self.move_raise(bet)
+            else:
+                return self.move_call(game_state.last_bet)
 
         win_prob = self.win_probability(game_state, player_num)
-        if not self.has_moved:
-            self.has_moved = True
-            if win_prob >= 0.92:
-                bet_amount = int(self.bet_size(game_state, win_prob) * 0.75)
-                if game_state.last_bet == 0:
-                    self.move_bet(bet_amount)
-                    return (3, bet_amount)
-                elif game_state.last_bet >= bet_amount:
-                    self.move_call(game_state.last_bet)
-                    return (2, game_state.last_bet)
-                else:
-                    self.has_raised = True
-                    return (4, bet_amount)
-            elif win_prob >= 0.75:
-                bet_amount = int(self.bet_size(game_state, 0.75) * 0.75)
-                if game_state.last_bet == 0:
-                    self.move_bet(bet_amount)
-                elif game_state.last_bet >= bet_amount:
-                    self.move_call(game_state.last_bet)
-                    return (2, game_state.last_bet)
-                else:
-                    self.has_raised = True
-                    return (4, bet_amount)
-                return (3, bet_amount)
-            elif win_prob >= 0.5: #safe betting
-                bet_amount = int(self.bet_size(game_state, 0.5) * 0.25)
-                if game_state.last_bet == 0:
-                    self.move_bet(bet_amount)
-                    return (3, bet_amount)
-                elif game_state.last_bet >= bet_amount:
-                    if game_state.stage == 4:
-                        self.move_fold()
-                        return (0, 0)
-                    self.move_check()
-                    return (1, 0)
-                else:
-                    self.move_call(game_state.last_bet)
-                    return (2, game_state.last_bet)
-            elif win_prob >= 0.1: #pass
-                if game_state.stage == 4:
-                    self.move_fold()
-                    return (0, 0)
-                self.move_check()
-                return (1, 0)
-            else: #instant fold
-                self.move_fold()
-                return(0, 0)
-        else:
-            self.move_fold()
-            return (0, 0)
+        bet_amount = int(self.balance) if win_prob >= 0.95 else int(self.bet_size(game_state, win_prob))
+        if bet_amount >= self.balance:
+            return self.move_all_in()
+        if win_prob >= 0.95:  # all in if win is basically guaranteed
+            if game_state.last_bet == 0:
+                return self.move_bet(bet_amount)
+            else:
+                return self.move_raise(bet_amount)
+        elif win_prob >= 0.5:  # safe betting
+            if game_state.last_bet == 0:
+                return self.move_bet(bet_amount)
+            elif game_state.last_bet > (game_state.pool - game_state.last_bet) * (1 - win_prob):  # their bet exceeds
+                # our expectation to win the game
+                return self.move_fold()
+            else:  # call their 'bluff'
+                return self.move_call(game_state.last_bet)
+        elif game_state.last_bet == 0:
+            return self.move_check()
+        else:  # fold if under threat
+            return self.move_fold()
 
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float, hand_quality: int = 0) -> float:
         """
@@ -548,11 +392,29 @@ class NaivePlayer(Player):
         # Determine a bet size based on the current balance and win probability
         if game_state.stage == 1:
             if hand_quality == 1:
-                return 0.8 * self.balance
-            elif hand_quality == 2:
-                return 0.04 * self.balance
+                return 0.025 * self.balance
             else:
                 return game_state.last_bet
 
-        bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
+        # typically, you bet proportionally to the pot based on how likely you think you are to win
+        bet_amount = min(self.balance, int(game_state.pool * (1 / (1 - win_prob_threshold))))
         return bet_amount
+
+
+def _generate_card_combos(used_cards: set[Card], cards_so_far: set[Card], level_to_stop: int) -> list[set[Card]]:
+    """
+    Returns all the possible pairs of cards that have not appeared in used_cards
+    """
+    all_pairs = []
+    for i in range(1, 14):
+        for j in range(1, 5):
+            if (i, j) not in used_cards:
+                if len(cards_so_far) == level_to_stop:
+                    added_card = cards_so_far.union({(i, j)})
+                    all_pairs.append(added_card)
+                else:
+                    new_cards_so_far = cards_so_far.union({(i, j)})
+                    new_used_cards = used_cards.union(new_cards_so_far)
+                    all_pairs.extend(_generate_card_combos(new_used_cards, new_cards_so_far, level_to_stop))
+
+    return all_pairs
