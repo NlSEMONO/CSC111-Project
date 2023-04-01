@@ -1,6 +1,6 @@
 from PokerGame import PokerGame
 import Player
-import copy
+#import copy
 from NaivePlayer import NaivePlayer
 import random
 
@@ -26,7 +26,7 @@ def run_round(player1: Player.Player, player2: Player.Player) -> list[PokerGame]
     turn_order[1].bet_this_round = p2_initial_cost
     turn_order[1].balance -= p2_initial_cost
     game.last_bet = p2_initial_cost
-    game_states_so_far = [copy.copy(game)]
+    game_states_so_far = [game.copy()]
 
     while game.check_winner() is None:
         # print(f'{game.last_bet} {game.community_cards} {game.stage}')
@@ -39,7 +39,7 @@ def run_round(player1: Player.Player, player2: Player.Player) -> list[PokerGame]
         elif turn_order[game.turn].balance == 0:
             game.check_winner(True)
         game.check_winner()
-        game_states_so_far.append(copy.copy(game))
+        game_states_so_far.append(game.copy())
         if all(p.has_moved for p in turn_order):
             game.next_stage()
             turn_order[0].reset_player()
@@ -50,7 +50,6 @@ def run_round(player1: Player.Player, player2: Player.Player) -> list[PokerGame]
     # print(game)
 
     return game_states_so_far
-
 
 if __name__ == '__main__':
     for i in range(10):

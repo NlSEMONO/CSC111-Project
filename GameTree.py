@@ -97,7 +97,7 @@ class GameTree:
             else:
                 classes_so_far.add('Non BTN Hand')
             return classes_so_far
-        if following == game_state.turn:
+        if following == game_state.turn and game_state.stage != 1:
             # current best poker hand player can threaten
             current_best = game_state.rank_poker_hand(player_hand)
             used_cards = game_state.community_cards.union(player_hand)
@@ -196,5 +196,7 @@ tree = GameTree()
 
 result = run_round(TestingPlayer(10000), NaivePlayer(10000))
 moves = result[-1].get_move_sequence()
+for game in result:
+    print(game.community_cards)
 
 tree.insert_moves(moves, result, 0)
