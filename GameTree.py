@@ -71,7 +71,7 @@ class GameTree:
                 if current_state.stage != game_states[move_number + 1].stage: #checks to see if the next game_state has changed rounds
                     evaluated = False
 
-            self.subtrees[tup_of_action].insert_moves(moves, game_states, following, evaluated, move_number + 1)
+            self.subtrees[tup_of_action].insert_moves(moves, game_states, following, evaluated, move_number + (1 if any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())) else 0))
 
     def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluated: bool, evaluate_move: bool = True) -> set[str]:
         """
