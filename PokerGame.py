@@ -147,7 +147,7 @@ class PokerGame:
         if all_in:
             while len(self.community_cards) < 5:
                 self.community_cards.add(self._pick_card())
-            self.stage = 4
+            self.stage = 5
 
         if self.stage == 5:
             p1_score = self.rank_poker_hand(self.player1_hand)

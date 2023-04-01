@@ -5,8 +5,7 @@ from __future__ import annotations
 from typing import Any, Optional
 from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND, NUM_TO_RANK
 from GameRunner import NUM_TO_ACTION, run_round
-from Player import Player, TestingPlayer
-from NaivePlayer import NaivePlayer
+from Player import Player, TestingPlayer, NaivePlayer
 
 FOLD_CODE = 0
 CHECK_CODE = 1
@@ -33,17 +32,18 @@ class GameTree:
     classes_of_action: Optional[set[str]]
     subtrees: dict[frozenset[str], GameTree]
     move_confidence_value: float
-    won_games_in_route: int
+    good_outcomes_in_route: int
     total_games_in_route: int
 
     def __init__(self, node_val: Optional[set[str]] = None) -> None:
         self.classes_of_action = node_val
         self.subtrees = {}
-        self.win_pool_perc = 0
-        self.games_in_route = 0
+        self.move_confidence_value = 0
+        self.total_games_in_route = 0
+        self.good_outcomes_in_route = 0
 
     def insert_moves(self, moves: list[Move], game_states: list[PokerGame], following: int, evaluated: bool = False,
-                     move_number: int = 0) -> None:
+                     move_number: int = 0) -> bool:
         """
         Inserts a sequence of moves into the tree. Will insert the move at move_number into a new subtree or current
         subtree of appropriate height (ie. if move_number is 0, the move will go into a subtree of height 1, as that is
@@ -54,8 +54,53 @@ class GameTree:
         - 0 <= move_number < len(moves)
         - following in {0, 1}
         """
-        if move_number == len(moves):
-            return
+        if move_number == len(moves): # last move was the last move
+            current_state = game_states[-1]
+            my_hand = current_state.player1_hand if following == 0 else current_state.player2_hand
+            opponent_hand = current_state.player2_hand if following == 0 else current_state.player1_hand
+            if current_state.stage == 1: # only folds can trigger this
+                self.total_games_in_route += 1
+                my_hand_good = burner_player.rate_hand(list(my_hand))
+                opponent_hand_good = burner_player.rate_hand(list(opponent_hand))
+                if opponent_hand_good == 1 and my_hand_good == 2:
+                    self.good_outcomes_in_route += 1
+                    self._update_confidence_value()
+                    return True
+            elif current_state.stage == 4: # only folds can trigger this
+                self.total_games_in_route += 1
+                p1_score = current_state.rank_poker_hand(my_hand)
+                p2_score = current_state.rank_poker_hand(opponent_hand)
+                if current_state.determine_winner(p1_score, p2_score) == 2:
+                    # folding in a disadvantageous position is generally good and getting an opponent who has an advantage
+                    # to fold is a good outcome as well
+                    self.good_outcomes_in_route += 1
+                    self._update_confidence_value()
+                    return True
+            elif current_state.stage == 5: # only showdowns can trigger this
+                self.total_games_in_route += 1
+                # won and made decent money
+                if current_state.winner == following + 1 and any(move[0] in {RAISE_CODE, CALL_CODE, BET_CODE} for move in moves):
+                    self.good_outcomes_in_route += 1
+                    self._update_confidence_value()
+                    return True
+            else: # only folds can trigger
+                self.total_games_in_route += 1
+                used_cards = current_state.community_cards.union(my_hand.union(opponent_hand))
+                next_comm_cards = self._generate_card_combos(used_cards, set(), 4 - len(current_state.community_cards))
+                positive_outcomes = 0
+                for next_cards in next_comm_cards:
+                    p1_score = current_state.rank_poker_hand(my_hand.union(next_cards))
+                    p2_score = current_state.rank_poker_hand(opponent_hand.union(next_cards))
+                    if current_state.determine_winner(p1_score, p2_score) == 1:
+                        positive_outcomes += 1
+                if positive_outcomes < len(next_comm_cards) / 2:
+                    # folding in a disadvantageous position is generally good and getting an opponent who has an advantage
+                    # to fold is a good outcome as well
+                    self.good_outcomes_in_route += 1
+                    self._update_confidence_value()
+                    return True
+            self._update_confidence_value()
+            return False
         else:
             current_move = moves[move_number]
             current_state = game_states[move_number]
@@ -69,22 +114,18 @@ class GameTree:
             if move_number + 1 != len(moves):
                 if current_state.stage != game_states[move_number + 1].stage: #checks to see if the next game_state has changed rounds
                     evaluated = False
-            # if current_state.winner is not None:
-            #     if current_state.winner == followed:
-            #         self.win_pool_perc = current_state.pool #we have to divide it by something??
-            #     else:
-            #         self.win_pool_perc = 0
+            self.total_games_in_route += 1
+            # if positive outcome in lower branch
+            if self.subtrees[immutable_actions].insert_moves(moves, game_states, following, evaluated, move_number + (1 if any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())) else 0)):
+                self.good_outcomes_in_route += 1
+                self._update_confidence_value()
+                return True
 
-            self.subtrees[immutable_actions].insert_moves(moves, game_states, following, evaluated, move_number + (1 if any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())) else 0))
-            # self.update_win_pool()
+            self._update_confidence_value()
+            return False
 
-    # def update_win_pool(self) -> None:
-    #     if self.subtrees == {}:
-    #         return
-    #     else:
-    #         c = sum([self.subtrees[subtree].win_pool_perc for subtree in
-    #                  win_pool_perc])
-    #         self.guesser_win_probability = c / len(self._subtrees)
+    def _update_confidence_value(self) -> None:
+        self.move_confidence_value = self.good_outcomes_in_route / self.total_games_in_route
 
     def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluated: bool, evaluate_move: bool = True) -> set[str]:
 
@@ -114,7 +155,9 @@ class GameTree:
             used_cards = game_state.community_cards.union(player_hand)
             # current best poker hand player can threaten
             if 'High Card' == NUM_TO_POKER_HAND[current_best[0]]:
-                classes_so_far.add(f'High Card {NUM_TO_RANK[(current_best[1][0][0] - 1) % 13 + 1]} in hand')
+                best = [card for card in current_best[1] if card not in game_state.community_cards]
+                best = best[0] if best != [] else -1
+                classes_so_far.add(f'High Card {NUM_TO_RANK[(best[0] - 1) % 13 + 1 ] if isinstance(best, tuple) else "not"} in hand')
             else:
                 classes_so_far.add(f'{NUM_TO_POKER_HAND[current_best[0]]} in hand')
             # potential poker hands the player can make in later in the game (if lucky)
@@ -152,8 +195,10 @@ class GameTree:
                         adjective = 'Conservative'
                     elif game_state.pool * 2 >= move[1]:  # bet is about 2 x the pot size
                         adjective = 'Moderate'
-                    else:
+                    elif game_state.pool * 4 >= move[1]:
                         adjective = 'Aggressive'  # bet is otherwise very high
+                    else:
+                        adjective = 'Very Aggressive'
                     classes_so_far.add(f'{adjective} {NUM_TO_ACTION[move[0]]}')
 
         return classes_so_far
@@ -206,9 +251,11 @@ class GameTree:
 tree = GameTree()
 
 result = run_round(TestingPlayer(10000), NaivePlayer(10000))
-moves = result[-1].get_move_sequence()
+result[-1].check_winner()
+print(result[-1])
+move_sequence = result[-1].get_move_sequence()
 
-tree.insert_moves(moves, result, 1)
+tree.insert_moves(move_sequence, result, 0)
 
 while len(tree.subtrees) > 0:
     print(tree.classes_of_action)
