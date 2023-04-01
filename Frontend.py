@@ -9,6 +9,57 @@ from pygame.colordict import THECOLORS
 import random
 import math
 import pygame.gfxdraw
+import Player
+
+# class HumanPlayer(Player):
+#     """
+#     Abstract class representing a human player
+#         move_button: (name of the move, bet or raise amount if the move is a bet or raise otherwise 0)
+#     """
+#     move_button: tuple[str, int]
+
+#     # if not fold & check code => bet amount
+#     def __init__(self, move_button: tuple[str, int]) -> None:
+#         super().__init__()
+#         # modify this attribute every turn that user presses a button
+#         self.move_button = move_button
+
+#     def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
+#         """
+#         Always checks if there is no bet, and will fold otherwise
+
+#         Will always bet on first turn
+#         """
+
+        # self.has_moved = True
+        # if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
+        #     return self.move_bet(1)
+        # elif game_state.stage == 1 and self.bet_this_round == 0:
+        #     return self.move_call(game_state.last_bet)
+        # elif game_state.last_bet > 0:
+        #     return self.move_fold()
+        # else:
+        #     return self.move_check()
+
+    
+        
+    
+
+
+
+    # if {button press on bet button}: 
+    #     return self.move_bet(bet_amount)
+    # if {button press on check button}: 
+    #     return self.move_check()
+    # if {button press on bet button}: 
+    #     return self.move_bet(bet_amount)
+    # if {button press on check button}: 
+    #     return self.move_check()
+    # if {button press on bet button}: 
+    #     return self.move_bet(bet_amount)
+    # if {button press on check button}: 
+    #     return self.move_check()
+
 
 
 # Load card images
@@ -173,10 +224,19 @@ while running:
     screen.blit(card_back, (800, 100))
     screen.blit(card_back, (850, 100))
 
+    # Display the community cards
+    # game.community_cards (after each turn)
+
     # pygame.display.flip()
 
     # Update the game display
-    pygame.display.update()
+    pygame.display.flip()
 
 # Quit Pygame
 pygame.quit()
+
+# bet & raise: user has to specify the quantity 
+# bet: first raise 
+# disable bet after raise 
+# call: only after bet or raise: 
+# checK: I don't wanna bet, just open card (only when the other player doesn't bet or raise) -> need to fold or raise after the bet

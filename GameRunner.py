@@ -28,6 +28,7 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
     while game.check_winner() is None:
         # print(f'{game.last_bet} {game.community_cards} {game.stage}')
         move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
+        # (type of action (int), # of money bet or raised)
         print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s{"" if move[0] in {Player.FOLD_CODE, Player.CHECK_CODE, Player.CALL_CODE} else " "+str(move[1])}')
         game.run_move(move)
 
@@ -46,7 +47,7 @@ def run_round(player1: Player.Player, player2: Player.Player) -> PokerGame:
 
     return game
 
-
+# simulate 10 rounds
 for i in range(10):
     p1 = Player.TestingPlayer(10000)
     p2 = Player.NaivePlayer(10000)
