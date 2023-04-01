@@ -3,16 +3,10 @@ File for game trees: a tree that represents all the collective move sequences pl
 """
 from __future__ import annotations
 from typing import Any, Optional
-<<<<<<< Updated upstream
-from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND
-from GameRunner import NUM_TO_ACTION
-from Player import Player
-=======
 from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND, NUM_TO_RANK
 from GameRunner import NUM_TO_ACTION, run_round
 from Player import Player, TestingPlayer
 from NaivePlayer import NaivePlayer
->>>>>>> Stashed changes
 
 FOLD_CODE = 0
 CHECK_CODE = 1
@@ -24,13 +18,12 @@ THREAT_CONSTANT = 6
 
 burner_player = Player(10) # player object to access player methods
 
+
 class GameTree:
     """
     Decision tree for game sequences
-
     Each root/node represents a class of action; a way of categorizing the situation/board state in which players made
     their decisions and their responses to the situation.
-
     Represenatation Invariants:
     - not (self.classes_of_action is None) or self.subtrees == {}
     - If the classes of action is an empty set, the tree's current node represents the start of the game, where no moves
@@ -38,34 +31,24 @@ class GameTree:
     - all(c == self.subtrees[c].classes_of_action for c in self.subtrees)
     """
     classes_of_action: Optional[set[str]]
-<<<<<<< Updated upstream
-    subtrees: dict[set[str], GameTree]
-    move_confidence_value: float
-=======
     subtrees: dict[frozenset[str], GameTree]
     move_confidence_value: float
     won_games_in_route: int
     total_games_in_route: int
->>>>>>> Stashed changes
 
     def __init__(self, node_val: Optional[set[str]] = None) -> None:
         self.classes_of_action = node_val
         self.subtrees = {}
-<<<<<<< Updated upstream
-=======
         self.win_pool_perc = 0
         self.games_in_route = 0
->>>>>>> Stashed changes
 
-    def insert_moves(self, moves: list[Move], game_states: list[PokerGame], following: int,
+    def insert_moves(self, moves: list[Move], game_states: list[PokerGame], following: int, evaluated: bool = False,
                      move_number: int = 0) -> None:
         """
         Inserts a sequence of moves into the tree. Will insert the move at move_number into a new subtree or current
         subtree of appropriate height (ie. if move_number is 0, the move will go into a subtree of height 1, as that is
         the first move played in the game).
-
         Classes of action are based on the player we are 'following' (ie. player whose information we share)
-
         Preconditions:
         - len(moves) == len(game_states)
         - 0 <= move_number < len(moves)
@@ -76,14 +59,6 @@ class GameTree:
         else:
             current_move = moves[move_number]
             current_state = game_states[move_number]
-<<<<<<< Updated upstream
-            classes_of_action = self.get_classes_of_action(current_move, current_state, following)
-            if classes_of_action not in self.subtrees:
-                self.add_subtree(classes_of_action)
-            self.subtrees[classes_of_action].insert_moves(moves, game_states, following, move_number + 1)
-
-    def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluate_move: bool = True) -> set[str]:
-=======
             classes_of_action = self.get_classes_of_action(current_move, current_state, following, evaluated)
             if not any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())): #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
                 #evaluation an only happen once per stage, hence the first move is an evaluation
@@ -112,15 +87,13 @@ class GameTree:
     #         self.guesser_win_probability = c / len(self._subtrees)
 
     def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluated: bool, evaluate_move: bool = True) -> set[str]:
->>>>>>> Stashed changes
+
         """
         Returns 'tags' or what we call 'classes of action' characteristic of the given input board_state and
         corresponding move played.
-
         Classes of action contain 4 things, if we are following the player whose hand we know (we can't assume we know
         the opponent's hand): the strength of the best possible poker hand the player can make at the moment, strong
         poker hands that the player can threaten if they get 'lucky', and the type of move they played.
-
         When we are not following the player's whose hand we know, classes of action may only contain two items:
         poker hands that can threaten the player who we are following and the type of move that was played.
         """
@@ -129,18 +102,6 @@ class GameTree:
             player_hand = game_state.player1_hand
         else:
             player_hand = game_state.player2_hand
-<<<<<<< Updated upstream
-        current_best = game_state.rank_poker_hand(player_hand)
-        used_cards = game_state.community_cards.union(player_hand)
-        if following == game_state.turn:
-            if game_state.stage == 1:
-                hand_quality = burner_player.rate_hand(list(player_hand))
-                if hand_quality == 1:
-                    classes_so_far.add('BTN Hand')
-                else:
-                    classes_so_far.add('Non BTN Hand')
-                return classes_so_far
-=======
         if game_state.stage == 1 and (not evaluated):
             hand_quality = burner_player.rate_hand(list(player_hand))
             if hand_quality == 1:
@@ -149,7 +110,8 @@ class GameTree:
                 classes_so_far.add('Non BTN Hand')
             return classes_so_far
         if game_state.stage != 1 and not evaluated:
->>>>>>> Stashed changes
+            current_best = game_state.rank_poker_hand(player_hand)
+            used_cards = game_state.community_cards.union(player_hand)
             # current best poker hand player can threaten
             if 'High Card' == NUM_TO_POKER_HAND[current_best[0]]:
                 classes_so_far.add(f'High Card {NUM_TO_RANK[(current_best[1][0][0] - 1) % 13 + 1]} in hand')
@@ -157,11 +119,8 @@ class GameTree:
                 classes_so_far.add(f'{NUM_TO_POKER_HAND[current_best[0]]} in hand')
             # potential poker hands the player can make in later in the game (if lucky)
             if game_state.stage != 4:
-<<<<<<< Updated upstream
-                possible_adds_comm_cards = self._generate_card_combos(used_cards, set(), 1 - len(game_state.community_cards))
-=======
                 possible_adds_comm_cards = self._generate_card_combos(used_cards, set(), 4 - len(game_state.community_cards))
->>>>>>> Stashed changes
+
                 hands = [0] * (current_best[0] + 1)
                 for next_cards in possible_adds_comm_cards:
                     test_hand = player_hand.union(next_cards)
@@ -175,27 +134,6 @@ class GameTree:
                     i += 1
                 if i < len(hands):
                     classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} if lucky')
-<<<<<<< Updated upstream
-        class_to_add = self._determine_threats(game_state, used_cards, current_best)
-        if class_to_add is not None:
-            classes_so_far.add(class_to_add)
-        # Add type of move that was played (same for both options)
-        if evaluate_move:
-            if move[0] not in {BET_CODE, RAISE_CODE}:
-                classes_so_far.add(f'{NUM_TO_ACTION[move[0]]}')
-            else:
-                if game_state.pool <= move[1]:  # bet is about the pot size
-                    adjective = 'Conservative'
-                elif game_state.pool * 2 <= move[2]:  # bet is about 2 x the pot size
-                    adjective = 'Moderate'
-                else:
-                    adjective = 'Aggressive'  # bet is otherwise very high
-                classes_so_far.add(f'{adjective} {NUM_TO_ACTION[move[0]]}')
-
-        return classes_so_far
-
-    def add_subtree(self, classes_of_action: set[str]) -> None:
-=======
         if game_state.stage != 1 and following != game_state.turn:
             current_best = game_state.rank_poker_hand(player_hand)
             used_cards = game_state.community_cards.union(player_hand)
@@ -221,18 +159,18 @@ class GameTree:
         return classes_so_far
 
     def add_subtree(self, classes_of_action: frozenset[str]) -> None:
->>>>>>> Stashed changes
+
         """
         Adds a new subtree to the tree's list of subtrees
         """
-        self.subtrees[classes_of_action] = GameTree(classes_of_action)
+        self.subtrees[classes_of_action] = GameTree(set(classes_of_action))
 
     def _determine_threats(self, game_state: PokerGame, used_cards: set[Card], current_best: tuple[Any, ...]) -> Optional[str]:
         all_hands = self._generate_card_combos(used_cards, set(), 1)
         better_hands = [0] * (current_best[0] + 1)
         for hand in all_hands:  # determine threatening hands the opponent can have
             hand_rank = game_state.rank_poker_hand(hand)
-            if hand_rank[0] > current_best[0] or game_state.determine_winner(current_best, hand_rank):
+            if hand_rank[0] < current_best[0] or game_state.determine_winner(current_best, hand_rank) == 2:
                 better_hands[hand_rank[0]] += 1
         for i in range(1, len(better_hands)):
             better_hands[i] = better_hands[i] + better_hands[i - 1]
@@ -263,8 +201,6 @@ class GameTree:
                         all_pairs.extend(
                             self._generate_card_combos(new_used_cards, new_cards_so_far, level_to_stop))
         return all_pairs
-<<<<<<< Updated upstream
-=======
 
 
 tree = GameTree()
@@ -272,11 +208,10 @@ tree = GameTree()
 result = run_round(TestingPlayer(10000), NaivePlayer(10000))
 moves = result[-1].get_move_sequence()
 
-tree.insert_moves(moves, result, 0)
+tree.insert_moves(moves, result, 1)
 
 while len(tree.subtrees) > 0:
     print(tree.classes_of_action)
     subtrees = list(tree.subtrees.keys())
     tree = tree.subtrees[subtrees[0]]
 print(tree.classes_of_action)
->>>>>>> Stashed changes

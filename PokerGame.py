@@ -1,8 +1,8 @@
 """
 DeepPoker Project
-
 File for class that represents a game (state) of poker
 """
+from __future__ import annotations
 import random
 from typing import Optional, Any
 
@@ -30,7 +30,6 @@ ALL_IN_CODE = 5
 class PokerGame:
     """
     Class representing the 'board'
-
     Instance attributes:
     - player1_hand: Tuples? representing the cards in player 1's hand
     - player2_hand: Tuples? representing the cards in player 2's hand
@@ -74,7 +73,7 @@ class PokerGame:
         output_msg += f'Community Cards: {[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.community_cards]}\n'
         return output_msg
 
-    def run_move(self, move: tuple[int, int]) -> None:
+    def run_move(self, move: tuple[int, int], add_to_pool: int) -> None:
         """
         Plays a player's move on the board.
         """
@@ -85,8 +84,12 @@ class PokerGame:
             self.player2_moves.append(move)
 
         if move[0] == RAISE_CODE or move[0] == BET_CODE:
-            self.pool += (move[1] - self.last_bet)
-            self.last_bet = move[1]
+            if add_to_pool != -1:
+                self.pool += add_to_pool
+                self.last_bet = move[1]
+            else:
+                self.pool += (move[1] - self.last_bet)
+                self.last_bet = move[1]
         elif move[0] == ALL_IN_CODE:
             self.pool += move[1]
             self.last_bet = move[1]
@@ -357,8 +360,6 @@ class PokerGame:
             moves_so_far.append(self.player1_moves[-1])
 
         return moves_so_far
-<<<<<<< Updated upstream
-=======
 
     def copy(self) -> PokerGame:
         copy = PokerGame()
@@ -378,4 +379,3 @@ class PokerGame:
         copy.stage = self.stage
         copy.winner = self.winner
         return copy
->>>>>>> Stashed changes
