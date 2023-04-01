@@ -4,9 +4,7 @@ DeepPoker Project
 File for ALL player classes, which represent different playstyles for playing poker
 """
 from typing import Optional
-
 from PokerGame import PokerGame, Card
-import math
 
 #STATICS FOR MOVE CODES
 FOLD_CODE = 0

@@ -357,3 +357,25 @@ class PokerGame:
             moves_so_far.append(self.player1_moves[-1])
 
         return moves_so_far
+<<<<<<< Updated upstream
+=======
+
+    def copy(self) -> PokerGame:
+        copy = PokerGame()
+        for i in self.player1_hand:
+            copy.player1_hand.add(i)
+        for i in self.player2_hand:
+            copy.player2_hand.add(i)
+        copy.player1_moves.extend(self.player1_moves)
+        copy.player2_moves.extend(self.player2_moves)
+        copy.player1_poker_hand = self.player1_poker_hand
+        copy.player2_poker_hand = self.player2_poker_hand
+        copy.pool = self.pool
+        copy.last_bet = self.last_bet
+        copy.turn = self.turn
+        for i in self.community_cards:
+            copy.community_cards.add(i)
+        copy.stage = self.stage
+        copy.winner = self.winner
+        return copy
+>>>>>>> Stashed changes
