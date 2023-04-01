@@ -6,6 +6,7 @@ from typing import Any, Optional
 from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND, NUM_TO_RANK
 from GameRunner import NUM_TO_ACTION, run_round
 from Player import Player, TestingPlayer, NaivePlayer
+import copy
 
 FOLD_CODE = 0
 CHECK_CODE = 1
@@ -249,22 +250,41 @@ class GameTree:
 
     def insert_row_moves(self, moves: list, current: int = 0) -> None:
         """inserts a row of moves"""
-        for i in moves:
-            if i not in self.subtrees:
-                self.subtrees[i] = GameTree()
-            self.subtrees[i].insert_row_moves(moves, current + 1)
+        if current == len(moves):
+            return
+        else:
+            curr_stats = moves[current].split(';')
+            self.move_confidence_value = float(curr_stats[1])
+            self.good_outcomes_in_route = int(curr_stats[2])
+            self.total_games_in_route = int(curr_stats[3])
+            if current + 1 != len(moves):
+                next_subtree = moves[current + 1].split(';')[0]
+                frozenset_of_action = frozenset(set(next_subtree))
+                if frozenset_of_action not in self.subtrees:
+                    self.add_subtree(frozenset_of_action)
+                self.subtrees[frozenset_of_action].insert_row_moves(moves, current + 1)
 
-tree = GameTree()
+    def __str__(self) -> str:
+        str_so_far = f'{self.classes_of_action};{self.move_confidence_value};'
+        str_so_far += f'{self.good_outcomes_in_route};{self.total_games_in_route}'
+        return str_so_far
 
-result = run_round(TestingPlayer(10000), NaivePlayer(10000))
-result[-1].check_winner()
-print(result[-1])
-move_sequence = result[-1].get_move_sequence()
 
-tree.insert_moves(move_sequence, result, 0)
+if __name__ == '__main__':
+    tree = GameTree()
 
-while len(tree.subtrees) > 0:
+    for _ in range(100):
+        result = run_round(TestingPlayer(10000), NaivePlayer(10000), False)
+        result[-1].check_winner()
+        # print(result[-1])
+        move_sequence = result[-1].get_move_sequence()
+        # learn from both how p1 could have played and how p2 could have played
+        tree.insert_moves(move_sequence, result, 0)
+        tree.insert_moves(move_sequence, result, 1)
+    tree_copy = copy.copy(tree)
+    while len(tree.subtrees) > 0:
+        print(tree.classes_of_action)
+        print(tree.move_confidence_value)
+        subtrees = list(tree.subtrees.keys())
+        tree = tree.subtrees[subtrees[0]]
     print(tree.classes_of_action)
-    subtrees = list(tree.subtrees.keys())
-    tree = tree.subtrees[subtrees[0]]
-print(tree.classes_of_action)
