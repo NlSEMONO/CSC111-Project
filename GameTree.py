@@ -34,10 +34,12 @@ class GameTree:
     classes_of_action: Optional[set[str]]
     subtrees: dict[tuple[str], GameTree]
     move_confidence_value: float
+    win_pool_perc: int #percentage of balance increase
 
     def __init__(self, node_val: Optional[set[str]] = None) -> None:
         self.classes_of_action = node_val
         self.subtrees = {}
+        self.win_pool_perc = 0
 
     def insert_moves(self, moves: list[Move], game_states: list[PokerGame], following: int, evaluated: bool = False,
                      move_number: int = 0) -> None:
@@ -67,8 +69,22 @@ class GameTree:
             if move_number + 1 != len(moves):
                 if current_state.stage != game_states[move_number + 1].stage: #checks to see if the next game_state has changed rounds
                     evaluated = False
+            if current_state.winner is not None:
+                if current_state.winner == followed:
+                    self.win_pool_perc = current_state.pool #we have to divide it by something??
+                else:
+                    self.win_pool_perc = 0
 
             self.subtrees[tup_of_action].insert_moves(moves, game_states, following, evaluated, move_number + (1 if any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())) else 0))
+            self.update_win_pool()
+
+    def update_win_pool(self) -> None:
+        if self.subtrees == {}:
+            return
+        else:
+            c = sum([self.subtrees[subtree].win_pool_perc for subtree in
+                     win_pool_perc])
+            self.guesser_win_probability = c / len(self._subtrees)
 
     def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluated: bool, evaluate_move: bool = True) -> set[str]:
         """
