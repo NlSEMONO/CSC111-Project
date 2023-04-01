@@ -24,6 +24,7 @@ CHECK_CODE = 1
 CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
+ALL_IN_CODE = 5
 
 
 class PokerGame:
@@ -84,8 +85,11 @@ class PokerGame:
             self.player2_moves.append(move)
 
         if move[0] == RAISE_CODE or move[0] == BET_CODE:
+            self.pool += (move[1] - self.last_bet)
             self.last_bet = move[1]
-            self.pool += move[1] - self.last_bet
+        elif move[0] == ALL_IN_CODE:
+            self.pool += move[1]
+            self.last_bet = move[1]
         elif move[0] == CALL_CODE:
             self.pool += move[1]
 
@@ -202,11 +206,11 @@ class PokerGame:
     def _check_kickers(self, p1_cards: list[Card], p2_cards: list[Card], kickers_allowed: int,
                        blackist: list[int]) -> int:
         """
-        Evaluates if p1_cards or p2_cards are stronger by kickers_allowed kickers.
+        Evaluates if p1_cards or p2_cards are stronger by kickers_allowed kickers. Ignores 'blacklisted' ranks.
         """
         i = 0
         buffer = 0
-        while i < kickers_allowed and p1_cards[i + buffer][0] == p2_cards[i + buffer][0]:
+        while i < kickers_allowed and i + buffer < len(p1_cards) and p1_cards[i + buffer][0] == p2_cards[i + buffer][0]:
             if p1_cards[i + buffer][0] in blackist:
                 buffer += 1
             else:
@@ -227,6 +231,10 @@ class PokerGame:
         is_straight = self._check_straight(all_cards)
         rank_counts = self._count_ranks(all_cards)
         reversed_cards = all_cards.copy()
+        i = 0
+        while i < len(all_cards) and all_cards[i][0] == 1:
+            reversed_cards.append((14, all_cards[i][1]))  # add aces to the end of reversed cards
+            i += 1
         reversed_cards.reverse()
 
         if straight_flush[0] and straight_flush[1] == 14:
@@ -248,8 +256,6 @@ class PokerGame:
         elif len(rank_counts[2]) > 0:
             return (9, rank_counts[2], reversed_cards)
         else:
-            if reversed_cards[-1][0] == 1:
-                reversed_cards.insert(0, (14, reversed_cards[len(reversed_cards) - 1][1]))  # make aces the highest
             return (10, reversed_cards)
 
     def _check_straight_flush(self, cards: list[Card]) -> tuple[bool, int]:
@@ -351,3 +357,25 @@ class PokerGame:
             moves_so_far.append(self.player1_moves[-1])
 
         return moves_so_far
+<<<<<<< Updated upstream
+=======
+
+    def copy(self) -> PokerGame:
+        copy = PokerGame()
+        for i in self.player1_hand:
+            copy.player1_hand.add(i)
+        for i in self.player2_hand:
+            copy.player2_hand.add(i)
+        copy.player1_moves.extend(self.player1_moves)
+        copy.player2_moves.extend(self.player2_moves)
+        copy.player1_poker_hand = self.player1_poker_hand
+        copy.player2_poker_hand = self.player2_poker_hand
+        copy.pool = self.pool
+        copy.last_bet = self.last_bet
+        copy.turn = self.turn
+        for i in self.community_cards:
+            copy.community_cards.add(i)
+        copy.stage = self.stage
+        copy.winner = self.winner
+        return copy
+>>>>>>> Stashed changes
