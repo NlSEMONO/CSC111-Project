@@ -58,9 +58,9 @@ class GameTree:
         else:
             current_move = moves[move_number]
             current_state = game_states[move_number]
-            if current_state.stage != 1:
-                return
+
             classes_of_action = self.get_classes_of_action(current_move, current_state, following, evaluated)
+            print(classes_of_action)
             if len(classes_of_action) != 2: #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
                 #evaluation an only happen once per stage, hence the first move is an evaluation
                 evaluated = True
@@ -85,6 +85,7 @@ class GameTree:
         When we are not following the player's whose hand we know, classes of action may only contain two items:
         poker hands that can threaten the player who we are following and the type of move that was played.
         """
+        print(evaluated)
         classes_so_far = set()
         if following == 0:
             player_hand = game_state.player1_hand
@@ -96,7 +97,6 @@ class GameTree:
                 classes_so_far.add('BTN Hand')
             else:
                 classes_so_far.add('Non BTN Hand')
-            return classes_so_far
         if following == game_state.turn and game_state.stage != 1:
             # current best poker hand player can threaten
             current_best = game_state.rank_poker_hand(player_hand)
@@ -107,7 +107,7 @@ class GameTree:
                 classes_so_far.add(f'{NUM_TO_POKER_HAND[current_best[0]]} in hand')
             # potential poker hands the player can make in later in the game (if lucky)
             if game_state.stage != 4:
-                possible_adds_comm_cards = self._generate_card_combos(used_cards, set(), 1 - len(game_state.community_cards))
+                possible_adds_comm_cards = self._generate_card_combos(used_cards, set(), 5 - len(game_state.community_cards))
                 hands = [0] * (current_best[0] + 1)
                 for next_cards in possible_adds_comm_cards:
                     test_hand = player_hand.union(next_cards)
@@ -196,7 +196,5 @@ tree = GameTree()
 
 result = run_round(TestingPlayer(10000), NaivePlayer(10000))
 moves = result[-1].get_move_sequence()
-for game in result:
-    print(game.community_cards)
 
 tree.insert_moves(moves, result, 0)
