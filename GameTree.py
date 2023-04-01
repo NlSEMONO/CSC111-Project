@@ -52,16 +52,13 @@ class GameTree:
         - len(moves) == len(game_states)
         - 0 <= move_number < len(moves)
         """
-        print('hi 3')
         if move_number == len(moves):
             return
         else:
             current_move = moves[move_number]
             current_state = game_states[move_number]
-
             classes_of_action = self.get_classes_of_action(current_move, current_state, following, evaluated)
-            print(classes_of_action)
-            if len(classes_of_action) != 2: #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
+            if not any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())): #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
                 #evaluation an only happen once per stage, hence the first move is an evaluation
                 evaluated = True
             tup_of_action = tuple(classes_of_action)
@@ -85,7 +82,6 @@ class GameTree:
         When we are not following the player's whose hand we know, classes of action may only contain two items:
         poker hands that can threaten the player who we are following and the type of move that was played.
         """
-        print(evaluated)
         classes_so_far = set()
         if following == 0:
             player_hand = game_state.player1_hand
@@ -97,7 +93,7 @@ class GameTree:
                 classes_so_far.add('BTN Hand')
             else:
                 classes_so_far.add('Non BTN Hand')
-        if following == game_state.turn and game_state.stage != 1:
+        if following == game_state.turn and game_state.stage != 1 and not evaluated:
             # current best poker hand player can threaten
             current_best = game_state.rank_poker_hand(player_hand)
             used_cards = game_state.community_cards.union(player_hand)
@@ -119,7 +115,6 @@ class GameTree:
                 i = 1
                 while i < len(hands) and hands[i] <= len(possible_adds_comm_cards) / THREAT_CONSTANT:
                     i += 1
-                    print('hi 2')
                 if i < len(hands):
                     classes_so_far.add(f'{NUM_TO_POKER_HAND[i]} if lucky')
         if game_state.stage != 1:
@@ -166,7 +161,6 @@ class GameTree:
         while i < len(better_hands) and better_hands[i] <= len(all_hands) / THREAT_CONSTANT:
             # take the highest poker hand that poses a 'legitimate risk' ie. >=16.7% of the opponent having it or better
             i += 1
-            print('hi')
         if i < len(better_hands):
             return f'{NUM_TO_POKER_HAND[i]} is threat'
         else:
@@ -198,3 +192,8 @@ result = run_round(TestingPlayer(10000), NaivePlayer(10000))
 moves = result[-1].get_move_sequence()
 
 tree.insert_moves(moves, result, 0)
+
+while len(tree.subtrees) > 0:
+    print(tree.classes_of_action)
+    subtrees = list(tree.subtrees.keys())
+    tree = tree.subtrees[subtrees[0]]

@@ -39,12 +39,12 @@ def run_round(player1: Player.Player, player2: Player.Player) -> list[PokerGame]
         elif turn_order[game.turn].balance == 0:
             game.check_winner(True)
         game.check_winner()
-        game_states_so_far.append(game.copy())
         if all(p.has_moved for p in turn_order):
             game.next_stage()
             turn_order[0].reset_player()
             turn_order[1].reset_player()
             game.last_bet = 0
+        game_states_so_far.append(game.copy())
 
     # print(f'{game.player1_moves} {game.player2_moves}')
     # print(game)
