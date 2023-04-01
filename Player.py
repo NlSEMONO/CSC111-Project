@@ -7,6 +7,7 @@ from typing import Optional
 from PokerGame import PokerGame, Card
 import math
 
+
 #STATICS FOR MOVE CODES
 FOLD_CODE = 0
 CHECK_CODE = 1
@@ -399,7 +400,6 @@ class NaivePlayer(Player):
         # typically, you bet proportionally to the pot based on how likely you think you are to win
         bet_amount = min(self.balance, int(game_state.pool * (1 / (1 - win_prob_threshold))))
         return bet_amount
-
 
 def _generate_card_combos(used_cards: set[Card], cards_so_far: set[Card], level_to_stop: int) -> list[set[Card]]:
     """

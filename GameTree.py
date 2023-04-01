@@ -247,6 +247,12 @@ class GameTree:
                             self._generate_card_combos(new_used_cards, new_cards_so_far, level_to_stop))
         return all_pairs
 
+    def insert_row_moves(self, moves: list, current: int = 0) -> None:
+        """inserts a row of moves"""
+        for i in moves:
+            if i not in self.subtrees:
+                self.subtrees[i] = GameTree()
+            self.subtrees[i].insert_row_moves(moves, current + 1)
 
 tree = GameTree()
 
