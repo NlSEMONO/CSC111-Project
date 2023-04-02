@@ -95,6 +95,8 @@ class PokerGame:
             self.last_bet = move[1]
         elif move[0] == CALL_CODE:
             self.pool += move[1]
+        if move[0] == FOLD_CODE:
+            return
 
         self.turn = (self.turn + 1) % 2
 
@@ -102,6 +104,8 @@ class PokerGame:
         """
         Moves onto the next stage of a poker game and makes the nessecary adjustments to the 'game state'
         """
+        if FOLD_CODE in (move[0] for move in self.player1_moves) or FOLD_CODE in (move[0] for move in self.player2_moves):
+            return
         if self.stage == 0:
             for _ in range(2):
                 self.player1_hand.add(self._pick_card())

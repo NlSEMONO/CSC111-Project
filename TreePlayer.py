@@ -193,7 +193,17 @@ if __name__ == '__main__':
     # subtrees = list(tp.games_played.subtrees.keys())
     # tree = copy.copy(tp.games_played)
     tree = GameTree()
-    for _ in range(1000):
+    for i in range(50000):
+        p1 = TestingPlayer(10000)
+        result = run_round(p1, NaivePlayer(10000), False)
+        result[-1].check_winner()
+        # print(result[-1])
+        move_sequence = result[-1].get_move_sequence()
+        # learn from both how p1 could have played and how p2 could have played
+        tree.insert_moves(move_sequence, result, 0)
+        tree.insert_moves(move_sequence, result, 1)
+
+    for i in range(50000):
         p1 = TreePlayer(10000)
         p1.games_played = copy.copy(tree)
         result = run_round(p1, NaivePlayer(10000), False)
@@ -203,12 +213,31 @@ if __name__ == '__main__':
         # learn from both how p1 could have played and how p2 could have played
         tree.insert_moves(move_sequence, result, 0)
         tree.insert_moves(move_sequence, result, 1)
+
     # tp = TreePlayer(10000, 'test.csv')
-    print_to_file(tree, 'TreePlayer_100000_games.txt')
     # while len(tree.subtrees) > 0:
     #     print(tree.classes_of_action)
     #     subtrees = list(tree.subtrees.keys())
     #     print(f'\t{subtrees}')
     #     tree = tree.subtrees[subtrees[-1]]
     # print(tree.classes_of_action)
+    # i = 0
+    # c = 0
+    # for _ in range(1000):
+    #     print(i)
+    #     i += 1
+    #     p1 = TreePlayer(10000)
+    #     p1.games_played = copy.copy(tree)
+    #     result = run_round(p1, NaivePlayer(10000), False)
+    #     result[-1].check_winner()
+    #     # print(result[-1])
+    #     move_sequence = result[-1].get_move_sequence()
+    #     # learn from both how p1 could have played and how p2 could have played
+    #     tree.insert_moves(move_sequence, result, 0)
+    #     tree.insert_moves(move_sequence, result, 1)
+    #     print(move_sequence)
+    #     if (move_sequence == [(0, -1)]):
+    #         c += 1
+    # print(c)
     print('done')
+    print_to_file(tree, 'trained.txt')
