@@ -189,19 +189,21 @@ def _tree_path_to_string(tree: GameTree) -> list[str]:
 
 
 if __name__ == '__main__':
+    # tree_player = TreePlayer(10000)
     # tp = TreePlayer(10000, 'TreePlayer_100000_games.txt')
     # subtrees = list(tp.games_played.subtrees.keys())
     # tree = copy.copy(tp.games_played)
     tree = GameTree()
-    for i in range(50000):
-        p1 = TestingPlayer(10000)
-        result = run_round(p1, NaivePlayer(10000), False)
-        result[-1].check_winner()
-        # print(result[-1])
-        move_sequence = result[-1].get_move_sequence()
-        # learn from both how p1 could have played and how p2 could have played
-        tree.insert_moves(move_sequence, result, 0)
-        tree.insert_moves(move_sequence, result, 1)
+    # for i in range(50000):
+    #     p1 = TreePlayer(10000)
+    #     p1.games_played = copy.copy(tree)
+    #     result = run_round(p1, NaivePlayer(10000), False)
+    #     result[-1].check_winner()
+    #     # print(result[-1])
+    #     move_sequence = result[-1].get_move_sequence()
+    #     # learn from both how p1 could have played and how p2 could have played
+    #     tree.insert_moves(move_sequence, result, 0)
+    #     tree.insert_moves(move_sequence, result, 1)
 
     for i in range(50000):
         p1 = TreePlayer(10000)
@@ -240,4 +242,4 @@ if __name__ == '__main__':
     #         c += 1
     # print(c)
     print('done')
-    print_to_file(tree, 'trained.txt')
+    print_to_file(tree, 'TreePlayer_50000_games.txt')

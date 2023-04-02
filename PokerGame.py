@@ -169,6 +169,8 @@ class PokerGame:
         Returns who the winner is given strength of poker hands and corresponding tie-breaking mechanisms.
         """
         if p1_score[0] == p2_score[0]:
+            if p1_score[0] == 1:
+                return 3 # royal flush on board
             if p1_score[0] == 2:
                 return 1 if p1_score[1] > p2_score[1] else 2  # tiebreaker for straight flush is the higher card
             elif p1_score[0] == 3:
