@@ -43,7 +43,7 @@ class TreePlayer(Player):
         win the game.
         """
         self.has_moved = True
-        if not explore and not self.exploring:
+        if not self.exploring:
             if player_num == 1 and len(game_state.player2_moves) > 0:
                 prev_move = game_state.player2_moves[-1]
                 classes_of_action = self.games_played.get_classes_of_action(prev_move, game_state, (game_state.turn + 1) % 2,
@@ -51,13 +51,13 @@ class TreePlayer(Player):
                 if frozenset(classes_of_action) in self.games_played.subtrees:
                     self.games_played = self.games_played.subtrees[frozenset(classes_of_action)]
                 else: # tree has not encountered this situation
-                    explore = True
+                    self.exploring = True
             if self.new_stage:
                 evaluation = self.games_played.get_classes_of_action((0, 0), game_state, (game_state.turn + 1) % 2, False)
                 if frozenset(evaluation) in self.games_played.subtrees:
                     self.games_played = self.games_played.subtrees[frozenset(evaluation)]
                 else: # tree has not encountered this situation
-                    explore = True
+                    self.exploring = True
                 self.new_stage = False
             if player_num == 2:
                 prev_move = game_state.player1_moves[-1]
@@ -66,8 +66,8 @@ class TreePlayer(Player):
                 if frozenset(classes_of_action) in self.games_played.subtrees:
                     self.games_played = self.games_played.subtrees[frozenset(classes_of_action)]
                 else: # tree has not encountered this situation
-                    explore = True
-            if not explore:
+                    self.exploring = True
+            if not self.exploring:
                 # search for the best continuation based on confidence values in subtree
                 best_so_far = -1
                 subtrees = self.games_played.subtrees
@@ -77,7 +77,7 @@ class TreePlayer(Player):
                     elif subtrees[best_so_far].move_confidence_value < subtrees[best_so_far].move_confidence_value:
                         best_so_far = subtree
                 for action in NUM_TO_ACTION:
-                    if action in list(best_so_far)[0]:
+                    if NUM_TO_ACTION[action] in list(best_so_far)[0]:
                         degree = -1
                         if 'Very Aggressive' in list(best_so_far)[0]:
                             degree = 4
@@ -96,7 +96,7 @@ class TreePlayer(Player):
                         return final_action
 
         # if exploring or tree has not encountered this situation, simply make random moves
-        if explore:
+        if self.exploring:
             move_type = random.choice(self.choices)
             while move_type in {CHECK_CODE, BET_CODE} and game_state.last_bet > 0: # reroll the move if invalid
                 move_type = random.choice(self.choices)
@@ -205,11 +205,11 @@ if __name__ == '__main__':
     #     tree.insert_moves(move_sequence, result, 0)
     #     tree.insert_moves(move_sequence, result, 1)
 
-    game_count = 50000
+    game_count = 20000
     exploration_games = game_count // 4
     game_thresholds = []
     for i in range(0, exploration_games):
-        game_thresholds.append(1 - (i // exploration_games))
+        game_thresholds.append(1 - (i / exploration_games))
     for _ in range(exploration_games, game_count):
         game_thresholds.append(-1)
 
@@ -251,4 +251,4 @@ if __name__ == '__main__':
     #         c += 1
     # print(c)
     print('done')
-    print_to_file(tree, 'TreePlayer_50000_games.txt')
+    print_to_file(tree, 'TreePlayer_20000.txt')
