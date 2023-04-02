@@ -24,6 +24,7 @@ class GameTree:
     Decision tree for game sequences
     Each root/node represents a class of action; a way of categorizing the situation/board state in which players made
     their decisions and their responses to the situation.
+
     Represenatation Invariants:
     - not (self.classes_of_action is None) or self.subtrees == {}
     - If the classes of action is an empty set, the tree's current node represents the start of the game, where no moves

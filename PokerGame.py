@@ -95,6 +95,8 @@ class PokerGame:
             self.last_bet = move[1]
         elif move[0] == CALL_CODE:
             self.pool += move[1]
+        if move[0] == FOLD_CODE:
+            return
 
         self.turn = (self.turn + 1) % 2
 
@@ -102,6 +104,8 @@ class PokerGame:
         """
         Moves onto the next stage of a poker game and makes the nessecary adjustments to the 'game state'
         """
+        if FOLD_CODE in (move[0] for move in self.player1_moves) or FOLD_CODE in (move[0] for move in self.player2_moves):
+            return
         if self.stage == 0:
             for _ in range(2):
                 self.player1_hand.add(self._pick_card())
@@ -147,7 +151,7 @@ class PokerGame:
         if all_in:
             while len(self.community_cards) < 5:
                 self.community_cards.add(self._pick_card())
-            self.stage = 4
+            self.stage = 5
 
         if self.stage == 5:
             p1_score = self.rank_poker_hand(self.player1_hand)
@@ -165,6 +169,8 @@ class PokerGame:
         Returns who the winner is given strength of poker hands and corresponding tie-breaking mechanisms.
         """
         if p1_score[0] == p2_score[0]:
+            if p1_score[0] == 1:
+                return 3 # royal flush on board
             if p1_score[0] == 2:
                 return 1 if p1_score[1] > p2_score[1] else 2  # tiebreaker for straight flush is the higher card
             elif p1_score[0] == 3:

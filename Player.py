@@ -2,12 +2,9 @@
 DeepPoker Project
 File for ALL player classes, which represent different playstyles for playing poker
 """
-from typing import Optional
-
 from PokerGame import PokerGame, Card
-import math
 
-#STATICS FOR MOVE CODES
+# STATICS FOR MOVE CODES
 FOLD_CODE = 0
 CHECK_CODE = 1
 CALL_CODE = 2
@@ -15,9 +12,6 @@ BET_CODE = 3
 RAISE_CODE = 4
 ALL_IN_CODE = 5
 
-#STATICS FOR HAND WEIGHTING (play around with these not sure) (not used atm)
-LOG_CNST = 10
-MOD_LOG = 4.9
 
 class Player:
     """
