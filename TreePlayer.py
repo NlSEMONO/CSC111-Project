@@ -194,16 +194,15 @@ if __name__ == '__main__':
     # subtrees = list(tp.games_played.subtrees.keys())
     # tree = copy.copy(tp.games_played)
     tree = GameTree()
-    # for i in range(50000):
-    #     p1 = TreePlayer(10000)
-    #     p1.games_played = copy.copy(tree)
-    #     result = run_round(p1, NaivePlayer(10000), False)
-    #     result[-1].check_winner()
-    #     # print(result[-1])
-    #     move_sequence = result[-1].get_move_sequence()
-    #     # learn from both how p1 could have played and how p2 could have played
-    #     tree.insert_moves(move_sequence, result, 0)
-    #     tree.insert_moves(move_sequence, result, 1)
+    for i in range(20000):
+        p1 = TestingPlayer(10000)
+        result = run_round(p1, NaivePlayer(10000), False)
+        result[-1].check_winner()
+        # print(result[-1])
+        move_sequence = result[-1].get_move_sequence()
+        # learn from both how p1 could have played and how p2 could have played
+        tree.insert_moves(move_sequence, result, 0)
+        tree.insert_moves(move_sequence, result, 1)
 
     game_count = 20000
     exploration_games = game_count // 4
