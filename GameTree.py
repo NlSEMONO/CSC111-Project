@@ -147,7 +147,9 @@ class GameTree:
         else:
             player_hand = game_state.player2_hand
         if game_state.stage == 1 and (not evaluated):
-            hand_quality = burner_player.rate_hand(list(player_hand))
+            hand_to_check = list(player_hand)
+            hand_to_check.sort()
+            hand_quality = burner_player.rate_hand(hand_to_check)
             if hand_quality == 1:
                 classes_so_far.add('BTN Hand')
             else:

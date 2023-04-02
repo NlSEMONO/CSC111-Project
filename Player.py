@@ -55,14 +55,8 @@ class Player:
         Rates how good an initial hand is based on possible poker hands it can make
         Preconditions:
             - player_num == 1 or player_num == 2
+            - the hand is sorted by rank of cards
         1 - 'button' pair - ie. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or better
-        2 - non-button pair
-        1 - Pair
-        2 - Straight flush
-        3 - both cards jack or higher or flush/straight draw
-        4 - nothing special
-        1 - 'button' pair - ie. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or better
-          - second element of tuple represents type of button hand
         2 - non-button pair
         """
         if hand[0][0] == hand[1][0] or hand[0][0] == 1: # same rank; a pair or ace in hand

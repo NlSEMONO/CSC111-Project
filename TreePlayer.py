@@ -4,7 +4,7 @@ File for TreePlayer, a player who 'learns' from experience by playing against va
 import copy
 import random
 from Player import Player, NaivePlayer, TestingPlayer
-from GameTree import GameTree
+from GameTree import GameTree, Card
 from PokerGame import PokerGame
 from GameRunner import run_round, NUM_TO_ACTION
 
@@ -13,6 +13,7 @@ CHECK_CODE = 1
 CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
+ALL_IN_CODE = 5
 
 
 class TreePlayer(Player):
@@ -24,6 +25,7 @@ class TreePlayer(Player):
     choices: list[int]
     new_stage: bool
     exploring: bool
+    old_comm_cards: set[Card]
 
     def __init__(self, balance: int, file: str = 'bruh.kkax') -> None:
         super().__init__(balance)
@@ -42,29 +44,39 @@ class TreePlayer(Player):
         """
         self.has_moved = True
         if not self.exploring:
+            clone_state = game_state.copy()
+            clone_state.turn = (clone_state.turn + 1) % 2
+            prev_move = (FOLD_CODE, 0)
             if player_num == 1 and len(game_state.player2_moves) > 0:
                 prev_move = game_state.player2_moves[-1]
-                classes_of_action = self.games_played.get_classes_of_action(prev_move, game_state, (game_state.turn + 1) % 2,
+            elif player_num == 2:
+                prev_move = game_state.player1_moves[-1]
+            if prev_move[0] in {CHECK_CODE, CALL_CODE}:
+                clone_state.community_cards = self.old_comm_cards
+                if self.old_comm_cards == set():
+                    clone_state.stage = 1
+                classes_of_action = self.games_played.get_classes_of_action(prev_move, clone_state, game_state.turn,
                                                                             True)
                 if frozenset(classes_of_action) in self.games_played.subtrees:
                     self.games_played = self.games_played.subtrees[frozenset(classes_of_action)]
                 else: # tree has not encountered this situation
                     self.exploring = True
             if self.new_stage:
-                evaluation = self.games_played.get_classes_of_action((0, 0), game_state, (game_state.turn + 1) % 2, False)
+                evaluation = self.games_played.get_classes_of_action((0, 0), game_state, game_state.turn, False)
                 if frozenset(evaluation) in self.games_played.subtrees:
+                    print(frozenset(evaluation))
                     self.games_played = self.games_played.subtrees[frozenset(evaluation)]
                 else: # tree has not encountered this situation
                     self.exploring = True
                 self.new_stage = False
-            if player_num == 2:
-                prev_move = game_state.player1_moves[-1]
-                classes_of_action = self.games_played.get_classes_of_action(prev_move, game_state, game_state.turn,
+            if prev_move[0] in {ALL_IN_CODE, RAISE_CODE, BET_CODE}:
+                classes_of_action = self.games_played.get_classes_of_action(prev_move, clone_state, game_state.turn,
                                                                             True)
                 if frozenset(classes_of_action) in self.games_played.subtrees:
                     self.games_played = self.games_played.subtrees[frozenset(classes_of_action)]
                 else: # tree has not encountered this situation
                     self.exploring = True
+            self.old_comm_cards = game_state.community_cards
             if not self.exploring:
                 # search for the best continuation based on confidence values in subtree
                 best_so_far = -1
@@ -72,7 +84,7 @@ class TreePlayer(Player):
                 for subtree in subtrees:
                     if best_so_far == -1:
                         best_so_far = subtree
-                    elif subtrees[best_so_far].move_confidence_value < subtrees[best_so_far].move_confidence_value:
+                    elif subtrees[best_so_far].move_confidence_value < subtrees[subtree].move_confidence_value:
                         best_so_far = subtree
                 for action in NUM_TO_ACTION:
                     if NUM_TO_ACTION[action] in list(best_so_far)[0]:
@@ -92,7 +104,6 @@ class TreePlayer(Player):
                         if frozenset(classes_of_action) in self.games_played.subtrees:
                             self.games_played = self.games_played.subtrees[frozenset(classes_of_action)]
                         return final_action
-
         # if exploring or tree has not encountered this situation, simply make random moves
         if self.exploring:
             move_type = random.choice(self.choices)
@@ -195,10 +206,10 @@ if __name__ == '__main__':
     # - if the mode is playing, it will use the saved state inside the tree player inside the target file to play a
     #   specified number of games
     # NOTE: IF MODE IS LEARNING, THE TARGET FILE MUST EXIST IN THE DIRECTORY THIS FILE IS BEING RUN IN
-    mode = 'learning'
-    target_file = 'TreePlayer_20000_version_2.txt'
+    mode = 'playing'
+    target_file = 'TreePlayer_20000.txt'
     # play 100 games so the TA won't have to AFK for a decent game state
-    total_games = 40000
+    total_games = 100
 
     if mode == 'learning':
         tree = GameTree()
