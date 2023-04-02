@@ -15,7 +15,6 @@ BET_CODE = 3
 RAISE_CODE = 4
 
 
-
 class TreePlayer(Player):
     """
     TreePlayer -- a player that learns how to play poker by first playing random moves until it eventually chooses
@@ -98,7 +97,8 @@ class TreePlayer(Player):
         # if exploring or tree has not encountered this situation, simply make random moves
         if self.exploring:
             move_type = random.choice(self.choices)
-            while move_type in {CHECK_CODE, BET_CODE} and game_state.last_bet > 0: # reroll the move if invalid
+            while (move_type in {CHECK_CODE, BET_CODE} and game_state.last_bet > 0) or \
+                    (move_type in {CALL_CODE, RAISE_CODE} and game_state.last_bet == 0): # reroll the move if invalid
                 move_type = random.choice(self.choices)
             return self._final_decision(game_state, move_type)
         return (0, 0)
