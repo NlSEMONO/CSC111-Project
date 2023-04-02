@@ -42,6 +42,7 @@ class TreePlayer(Player):
         Will make random moves if the player has not seen the event before, or if it is not specified to try its best to
         win the game.
         """
+        self.has_moved = True
         if not explore or not self.exploring:
             if player_num == 1 and len(game_state.player2_moves) > 0:
                 prev_move = game_state.player2_moves[-1]
@@ -192,7 +193,7 @@ if __name__ == '__main__':
     # subtrees = list(tp.games_played.subtrees.keys())
     # tree = copy.copy(tp.games_played)
     tree = GameTree()
-    for _ in range(1):
+    for _ in range(1000):
         p1 = TreePlayer(10000)
         p1.games_played = copy.copy(tree)
         result = run_round(p1, NaivePlayer(10000), False)
@@ -203,11 +204,11 @@ if __name__ == '__main__':
         tree.insert_moves(move_sequence, result, 0)
         tree.insert_moves(move_sequence, result, 1)
     # tp = TreePlayer(10000, 'test.csv')
-    # print_to_file(tree, 'TreePlayer_100000_games.txt')
-    while len(tree.subtrees) > 0:
-        print(tree.classes_of_action)
-        subtrees = list(tree.subtrees.keys())
-        print(f'\t{subtrees}')
-        tree = tree.subtrees[subtrees[-1]]
-    print(tree.classes_of_action)
+    print_to_file(tree, 'TreePlayer_100000_games.txt')
+    # while len(tree.subtrees) > 0:
+    #     print(tree.classes_of_action)
+    #     subtrees = list(tree.subtrees.keys())
+    #     print(f'\t{subtrees}')
+    #     tree = tree.subtrees[subtrees[-1]]
+    # print(tree.classes_of_action)
     print('done')

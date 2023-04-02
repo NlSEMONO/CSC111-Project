@@ -106,7 +106,7 @@ class GameTree:
             current_move = moves[move_number]
             current_state = game_states[move_number]
             classes_of_action = self.get_classes_of_action(current_move, current_state, following, evaluated)
-            print(classes_of_action)
+            # print(classes_of_action)
             if not any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())): #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
                 #evaluation an only happen once per stage, hence the first move is an evaluation
                 evaluated = True
