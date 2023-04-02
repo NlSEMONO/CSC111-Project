@@ -6,19 +6,19 @@ from __future__ import annotations
 import random
 from typing import Optional, Any
 
-# ARE WE COMFORTABLE WITH USING TUPLES FOR HANDS? WE ARE GONNA NEED TO PARSE THE DATA INTO INTEGERS ANYWAYS BECAUSE
-# WE NEED TO TURN CARDS INTO ARRAY INDICIES FOR AN IMAGE ARRAY, WHICH IMAGES WILL BE STORED IN.
-
-# card is either a tuple of 2 integers, or is a dataclass with two integers; Move is temporary
+# Aliases for common types we will be using in the future
 Card = tuple[int, int]
 Move = tuple[int, int]
 
+# Mappings that map integers to relevant information to make debugging more accessible
 NUM_TO_RANK = {1: 'Ace', 11: 'Jack', 12: 'Queen', 13: 'King'}
 for b in range(2, 11):
     NUM_TO_RANK[b] = str(b)
 NUM_TO_SUIT = {1: 'Spades', 2: 'Hearts', 3: 'Clubs', 4: 'Diamonds'}
 NUM_TO_POKER_HAND = {1: 'Royal Flush', 2: 'Straight Flush', 3: 'Four of a Kind', 4: 'Full House',
                      5: 'Flush', 6: 'Straight', 7: 'Three of a Kind', 8: 'Two Pair', 9: 'Pair', 10: 'High Card'}
+
+# Static variables for what specific integers mean in the context of moves
 FOLD_CODE = 0
 CHECK_CODE = 1
 CALL_CODE = 2
@@ -29,16 +29,36 @@ ALL_IN_CODE = 5
 
 class PokerGame:
     """
-    Class representing the 'board'
+    Class representing the game state of a game of Poker (that we are investigating)
+
     Instance attributes:
-    - player1_hand: Tuples? representing the cards in player 1's hand
-    - player2_hand: Tuples? representing the cards in player 2's hand
-    - dealer: integer representing player # closest to the dealer
+    - player1_hand: set of cards (tuple containing two ints representing suit and rank) representing the cards in
+      player 1's hand
+    - player2_hand: set of cards (tuple containing two ints representing suit and rank) representing the cards in
+      player 2's hand
+    - player1_moves: list of moves (in order, representing by tuples) that player1 has performed
+    - player2_moves: list of moves (in order, representing by tuples) that player2 has performed
+    - player1_poker_hand: the best poker hand player 1 can make during showdown
+    - player2_poker_hand: the best poker hand player 2 can make during showdown
     - pool: total amount of money/currency in the prize pool
-    - last_bet: last amount of money bet
-    - community_cards: Tuples? representing the community cards visible to the players
+    - last_bet: bet that players have to match
+    - community_cards: set of cards (tuple containing two ints representing suit and rank) representing the community
+      cards visible to the players
     - stage: integer representing what stage of the game is being represented (although it could be inferred)
-    - turn: integer representing player # that has to make a move
+    - turn: integer representing player # - 1, who has to make a move
+    - winner: Player # who has won the game; 3 if it's a tie
+
+    Representation Invariants:
+    - self.player1_poker_hand == '' or self.player1_poker_hand in NUM_TO_POKER_HAND.values()
+    - self.player2_poker_hand == '' or self.player2_poker_hand in NUM_TO_POKER_HAND.values()
+    - self.pool >= 0
+    - self.last_bet >= 0
+    - len(self.community_cards) <= 5 and len(self.player1_hand) <= 2 and len(self.player2_hand) <= 2
+    - [self.player1_moves[0], self.player2_moves[0], self.player1_moves[1], ...] represents a valid sequence of moves
+      in a game of poker.
+    - self.stage <= 5
+    - self.turn in {0, 1}
+    - self.winner in {1, 2, 3, None}
     """
     player1_hand: set[Card]
     player2_hand: set[Card]
@@ -54,6 +74,9 @@ class PokerGame:
     winner: Optional[int]
 
     def __init__(self) -> None:
+        """
+        Initializer for a game state of poker
+        """
         self.pool = 0
         self.last_bet = 0
         self.stage = 0
@@ -68,21 +91,32 @@ class PokerGame:
         self.player2_poker_hand = ''
 
     def __str__(self) -> str:
-        output_msg = f'Player 1 Hand: {[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.player1_hand]} - {self.player1_poker_hand}\n'
-        output_msg += f'Player 2 Hand: {[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.player2_hand]} - {self.player2_poker_hand}\n'
-        output_msg += f'Community Cards: {[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.community_cards]}\n'
+        """
+        Converts critical information in the game to a string (makes debugging more accessible).
+        """
+        output_msg = f'Player 1 Hand: ' \
+                     f'{[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.player1_hand]} ' \
+                     f'- {self.player1_poker_hand}\n'
+        output_msg += f'Player 2 Hand: ' \
+                      f'{[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.player2_hand]} ' \
+                      f'- {self.player2_poker_hand}\n'
+        output_msg += f'Community Cards: ' \
+                      f'{[f"{NUM_TO_RANK[card[0]]} of {NUM_TO_SUIT[card[1]]}" for card in self.community_cards]}\n'
         return output_msg
 
     def run_move(self, move: tuple[int, int], add_to_pool: int) -> None:
         """
         Plays a player's move on the board.
+
+        - Preconditions:
         """
-        # add appropriate move to move sequence
+        # add appropriate move to player who played the move
         if self.turn == 0:
             self.player1_moves.append(move)
         else:
             self.player2_moves.append(move)
 
+        # modify the bet to beat and pool to win accordingly
         if move[0] == RAISE_CODE or move[0] == BET_CODE:
             if add_to_pool != -1:
                 self.pool += add_to_pool
@@ -95,29 +129,34 @@ class PokerGame:
             self.last_bet = move[1]
         elif move[0] == CALL_CODE:
             self.pool += move[1]
+        # prevent turn from ticking if a player folds
         if move[0] == FOLD_CODE:
             return
 
+        # tick the turn so the next player has to make a move
         self.turn = (self.turn + 1) % 2
 
     def next_stage(self) -> None:
         """
         Moves onto the next stage of a poker game and makes the nessecary adjustments to the 'game state'
         """
-        if FOLD_CODE in (move[0] for move in self.player1_moves) or FOLD_CODE in (move[0] for move in self.player2_moves):
+        # don't tick stage if a player has already folded
+        if FOLD_CODE in (move[0] for move in self.player1_moves) or \
+                FOLD_CODE in (move[0] for move in self.player2_moves):
             return
-        if self.stage == 0:
+
+        if self.stage == 0:  # game not started = deal hands
             for _ in range(2):
                 self.player1_hand.add(self._pick_card())
                 self.player2_hand.add(self._pick_card())
-        elif self.stage == 1:
+        elif self.stage == 1:  # game in pre-flop = show first 3 community cards
             for _ in range(3):
                 self.community_cards.add(self._pick_card())
-        elif 1 < self.stage < 4:
+        elif 1 < self.stage < 4:  # flop or turn = reveal one more community card
             self.community_cards.add(self._pick_card())
-        elif self.stage == 4:
+        elif self.stage == 4:  # river = advance to showdown
             self.winner = self.check_winner()
-        else:
+        else:  # prevent stage ticking if this function is called more than 5 times
             return
 
         self.stage += 1
@@ -167,10 +206,14 @@ class PokerGame:
     def determine_winner(self, p1_score: Any, p2_score: Any) -> int:
         """
         Returns who the winner is given strength of poker hands and corresponding tie-breaking mechanisms.
+
+        Preconditions:
+        - p1_score and p2_score both contain the nessecary information to break ties of their 'caliber' of poker hand
+          e.g. if p1_score is high card, it would contain its best poker hand (in list format) in descending order
         """
         if p1_score[0] == p2_score[0]:
             if p1_score[0] == 1:
-                return 3 # royal flush on board
+                return 3  # royal flush on board = tie
             if p1_score[0] == 2:
                 return 1 if p1_score[1] > p2_score[1] else 2  # tiebreaker for straight flush is the higher card
             elif p1_score[0] == 3:
@@ -184,7 +227,7 @@ class PokerGame:
                 return 1 if max(p1_score[1]) > max(p2_score[1]) else 2
             elif p1_score[0] == 5:
                 return self._check_kickers(p1_score[1], p2_score[1], 5,
-                                           [])  # the _check_flush function already confines the search to only cards of the same suit
+                                           [])  # the _check_flush function already confines the search to same suits
             elif p1_score[0] == 6:
                 return 1 if p1_score[1] > p2_score[1] else 2
             elif p1_score[0] == 7:
@@ -216,9 +259,13 @@ class PokerGame:
                        blackist: list[int]) -> int:
         """
         Evaluates if p1_cards or p2_cards are stronger by kickers_allowed kickers. Ignores 'blacklisted' ranks.
+
+        Preconditions:
+        - p1_cards and p2_cards are sorted in descending order (by rank)
         """
         i = 0
         buffer = 0
+        # when this while condition breaks, either a tie or win is guaranteed
         while i < kickers_allowed and i + buffer < len(p1_cards) and p1_cards[i + buffer][0] == p2_cards[i + buffer][0]:
             if p1_cards[i + buffer][0] in blackist:
                 buffer += 1
@@ -231,8 +278,11 @@ class PokerGame:
 
     def rank_poker_hand(self, hand: set[Card]) -> tuple[Any, ...]:
         """
-        Returns how 'strong' a poker hand is (lower first number means stronger, higher second number means better tie-
-        breaker score)
+        Returns how 'strong' a poker hand is (lower first number means stronger, higher second number means better
+        tiebreaker score)
+
+        Preconditions:
+        - hand is a valid set of cards
         """
         all_cards = sorted(list(hand.union(self.community_cards)))
         straight_flush = self._check_straight_flush(all_cards)
@@ -249,7 +299,7 @@ class PokerGame:
         if straight_flush[0] and straight_flush[1] == 14:
             return (1, -1)  # not possible for two players to have royal flush; ignore tie
         elif straight_flush[0]:
-            return (2, straight_flush[1])  # need to find highest part of the straight flush
+            return (2, straight_flush[1])  # need to find the highest part of the straight flush
         elif len(rank_counts[4]) > 0:
             return (3, rank_counts[4], reversed_cards)  # need all cards to determine who has better kicker
         elif len(rank_counts[3]) > 0 and len(rank_counts[2]) > 0:
@@ -271,22 +321,30 @@ class PokerGame:
         """
         Checks if a straight flush is present inside a list of cards, and if it is, returns the highest card in the
         straight flush.
+
+        Preconditions:
+        - cards is sorted in ascending order
         """
         suit_counts = {i: [] for i in range(1, 5)}
         for card in cards:
             suit_counts[card[1]].append(card)
 
+        # evaluate for flush first
         suit = 0
         for i in range(1, 5):
             if len(suit_counts[i]) >= 5:
                 suit = i
                 break
 
+        # pass the cards that satisfy the flush conditions into the straight method
         return self._check_straight(suit_counts[suit]) if suit != 0 else (False, -1)
 
     def _check_straight(self, cards: list[Card]) -> tuple[bool, int]:
         """
         Checks if a straight is present and returns the highest card in the straight if one is.
+
+        Preconditions:
+        - cards is sorted in ascending order
         """
         temp_cards = cards.copy()
         i = 0
@@ -296,12 +354,13 @@ class PokerGame:
         counter = 0
         dupes = 0
         counting_from = len(temp_cards) - 5
+        # check if 4 consecutive cards are each 1 integer away from the next card
         while counter < 4 and counting_from > -1:
             if counter + counting_from + dupes + 1 >= len(temp_cards):
                 counter = 0
                 counting_from -= 1
                 dupes = 0
-                continue
+                continue  # skip all the next steps if the index to look at exceeds the maximum index of the list
             if temp_cards[counting_from + counter + dupes][0] + 1 == temp_cards[counting_from + counter + dupes + 1][0]:
                 counter += 1
             elif temp_cards[counting_from + dupes + counter][0] == temp_cards[counting_from + counter + dupes + 1][0]:
@@ -317,6 +376,9 @@ class PokerGame:
         """
         Checks if a flush is present and returns all the potential cards in the list of input cards that can be used in
         a flush.
+
+        Preconditions:
+        - cards is a sorted in ascending order
         """
         suit_counts = {i: [] for i in range(1, 5)}
         for card in cards:
@@ -337,6 +399,9 @@ class PokerGame:
         """
         Returns tuple representing # of doubles, triples, quadrouples respectively
         (only counts the highest ranked quadrouple/triple and will downgrade lower tier triples/doubles)
+
+        Preconditions:
+        - cards is sorted in ascending order
         """
         rank_counts = [0] * 15
         for card in cards:
@@ -355,7 +420,7 @@ class PokerGame:
 
     def get_move_sequence(self) -> list[Move]:
         """
-        Returns the sequence of moves played
+        Returns the sequence of moves played at the current game state
         """
         moves_so_far = []
         for i in range(len(self.player2_moves)):
@@ -368,6 +433,9 @@ class PokerGame:
         return moves_so_far
 
     def copy(self) -> PokerGame:
+        """
+        Returns a new game state object equivalent to the current one.
+        """
         copy = PokerGame()
         for i in self.player1_hand:
             copy.player1_hand.add(i)

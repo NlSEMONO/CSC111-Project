@@ -1,6 +1,13 @@
+"""
+DeepPoker Project
+
+This module contains a function that runs a simulation of a game of heads up poker with only one raise allowed per stage
+and with no restrictions on raise values.
+
+This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah Lee
+"""
 from PokerGame import PokerGame
 import Player
-from NaivePlayer import NaivePlayer
 import random
 
 NUM_TO_ACTION = {Player.FOLD_CODE: 'Fold', Player.CHECK_CODE: 'Check', Player.CALL_CODE: 'Call',
@@ -9,7 +16,10 @@ NUM_TO_ACTION = {Player.FOLD_CODE: 'Fold', Player.CHECK_CODE: 'Check', Player.CA
 
 def run_round(player1: Player.Player, player2: Player.Player, should_print: bool = True) -> list[PokerGame]:
     """
-    Simulates a round of poker
+    Simulates a round of poker (one game from Pre-flop to showdown)
+
+    Preconditions:
+        - player1 and player2 are valid Player objects constructed from the Player parent class in Player.py
     """
     dealer = random.randint(1, 2)
     game = PokerGame()
@@ -32,9 +42,12 @@ def run_round(player1: Player.Player, player2: Player.Player, should_print: bool
         invested_initially = turn_order[game.turn].bet_this_round
         move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
         if should_print:
-            print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s{"" if move[0] in {Player.FOLD_CODE, Player.CHECK_CODE, Player.CALL_CODE, Player.ALL_IN_CODE} else " "+str(move[1])}')
+            print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s'
+                  f'{"" if move[0] not in {Player.RAISE_CODE, Player.BET_CODE}else " "+str(move[1])}')
         game.run_move(move, move[1] - invested_initially if game.stage == 1 else -1)
-        if (move[0] == Player.RAISE_CODE or (move[0] == Player.BET_CODE and move[1] > 0) or move[0] == Player.ALL_IN_CODE) and turn_order[game.turn].balance > 0:
+        if (move[0] == Player.RAISE_CODE or
+            (move[0] == Player.BET_CODE and move[1] > 0) or move[0] == Player.ALL_IN_CODE) and \
+                turn_order[game.turn].balance > 0:
             turn_order[game.turn].has_moved = False  # must move again if raise occurs
         elif turn_order[game.turn].balance == 0:
             game.check_winner(True)
@@ -58,3 +71,5 @@ if __name__ == '__main__':
         p1 = Player.TestingPlayer(10000)
         p2 = Player.NaivePlayer(10000)
         result = run_round(p1, p2, False)[-1]
+        print(f'Player {result.winner} has won the game and {result.pool} currency!')
+        print(result)

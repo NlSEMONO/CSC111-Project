@@ -107,15 +107,14 @@ class GameTree:
             current_move = moves[move_number]
             current_state = game_states[move_number]
             classes_of_action = self.get_classes_of_action(current_move, current_state, following, evaluated)
-            # print(classes_of_action)
-            if not any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())): #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
-                #evaluation an only happen once per stage, hence the first move is an evaluation
+            if not any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())):
+                # an evaluation occurs if and only if there were no player actions in the classes of action
                 evaluated = True
             immutable_actions = frozenset(classes_of_action)
             if immutable_actions not in self.subtrees:
                 self.add_subtree(immutable_actions)
-            if move_number + 1 != len(moves):
-                if current_state.stage != game_states[move_number + 1].stage: #checks to see if the next game_state has changed rounds
+            if move_number + 1 != len(moves):  # checks to see if the next game_state has changed rounds
+                if current_state.stage != game_states[move_number + 1].stage:
                     evaluated = False
             self.total_games_in_route += 1
             # if positive outcome in lower branch
