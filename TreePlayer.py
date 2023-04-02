@@ -43,7 +43,7 @@ class TreePlayer(Player):
         win the game.
         """
         self.has_moved = True
-        if not explore or not self.exploring:
+        if not explore and not self.exploring:
             if player_num == 1 and len(game_state.player2_moves) > 0:
                 prev_move = game_state.player2_moves[-1]
                 classes_of_action = self.games_played.get_classes_of_action(prev_move, game_state, (game_state.turn + 1) % 2,
@@ -205,9 +205,18 @@ if __name__ == '__main__':
     #     tree.insert_moves(move_sequence, result, 0)
     #     tree.insert_moves(move_sequence, result, 1)
 
-    for i in range(50000):
+    game_count = 50000
+    exploration_games = game_count // 4
+    game_thresholds = []
+    for i in range(0, exploration_games):
+        game_thresholds.append(1 - (i // exploration_games))
+    for _ in range(exploration_games, game_count):
+        game_thresholds.append(-1)
+
+    for i in range(game_count):
         p1 = TreePlayer(10000)
         p1.games_played = copy.copy(tree)
+        p1.exploring = True if random.random() <= game_thresholds[i] else False
         result = run_round(p1, NaivePlayer(10000), False)
         result[-1].check_winner()
         # print(result[-1])
