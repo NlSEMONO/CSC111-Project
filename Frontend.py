@@ -9,37 +9,19 @@ from pygame.colordict import THECOLORS
 import random
 import math
 import pygame.gfxdraw
-from Player import Player
+import Player
 from PokerGame import PokerGame
 from NaivePlayer import NaivePlayer
 
-<<<<<<< HEAD
-=======
 from GameRunner import NUM_TO_ACTION, run_round
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
 
 
-class HumanPlayer(Player):
+
+
+class HumanPlayer(Player.Player):
     """
     Abstract class representing a human player
         move_button: (name of the move, bet or raise amount if the move is a bet or raise otherwise 0)
-<<<<<<< HEAD
-    """
-    move_button: tuple[str, int]
-
-    # if not fold & check code => bet amount
-    def __init__(self, move_button: tuple[str, int] = ('None', 0)) -> None:
-        super(HumanPlayer).__init__(Player)
-        # modify this attribute every turn that user presses a button
-        self.move_button = move_button
-
-    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
-        """
-        Always checks if there is no bet, and will fold otherwise
-        Will always bet on first turn
-        """
-        self.has_moved = True
-=======
         made_move: whether or not the user has made a move in each stage
     """
     move_button: tuple[str, int]
@@ -47,18 +29,20 @@ class HumanPlayer(Player):
 
     # if not fold & check code => bet amount
     def __init__(self, balance: int, move_button: tuple[str, int] = ('None', 0), made_move: bool = False) -> None:
-        Player.__init__(self, balance)
+        Player.Player.__init__(self, balance)
         # modify this attribute every stage that user presses a button
         self.move_button = move_button
+        self.made_move = made_move
 
     def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         # wait until user makes a move (presses a button) in each turn
-        while not self.has_moved:
-            print('test3')
+        while not self.made_move:
+            print('test33')
         # reset has_moved
-        self.has_moved = False
+        self.made_move = False
+        self.has_moved = True
 
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
+
         if self.move_button[0] == "bet": 
             if self.move_button[1] == self.balance:
                 return self.move_all_in()
@@ -78,71 +62,6 @@ class HumanPlayer(Player):
 
         elif self.move_button[0] == "fold": 
             return self.move_fold()
-
-<<<<<<< HEAD
-# Load card images
-card_back = pygame.transform.scale(pygame.image.load("img/card_back.png"), (200, 300))
-# Load card images and scale them
-card_images = {
-    "AC": pygame.transform.scale(pygame.image.load("img/Clover/A.png"), (200, 300)),
-    "2C": pygame.transform.scale(pygame.image.load("img/Clover/2.png"), (200, 300)),
-    "3C": pygame.transform.scale(pygame.image.load("img/Clover/3.png"), (200, 300)),
-    "4C": pygame.transform.scale(pygame.image.load("img/Clover/4.webp"), (200, 300)),
-    "5C": pygame.transform.scale(pygame.image.load("img/Clover/5.png"), (200, 300)),
-    "6C": pygame.transform.scale(pygame.image.load("img/Clover/6.png"), (200, 300)),
-    "7C": pygame.transform.scale(pygame.image.load("img/Clover/7.png"), (200, 300)),
-    "8C": pygame.transform.scale(pygame.image.load("img/Clover/8.png"), (200, 300)),
-    "9C": pygame.transform.scale(pygame.image.load("img/Clover/9.png"), (200, 300)),
-    "10C": pygame.transform.scale(pygame.image.load("img/Clover/10.png"), (200, 300)),
-    "JC": pygame.transform.scale(pygame.image.load("img/Clover/J.jpeg"), (200, 300)),
-    "QC": pygame.transform.scale(pygame.image.load("img/Clover/Q.jpeg"), (200, 300)),
-    "KC": pygame.transform.scale(pygame.image.load("img/Clover/K.webp"), (200, 300)),
-
-    "AD": pygame.transform.scale(pygame.image.load("img/Diamond/A.png"), (200, 300)),
-    "2D": pygame.transform.scale(pygame.image.load("img/Diamond/2.png"), (200, 300)),
-    "3D": pygame.transform.scale(pygame.image.load("img/Diamond/3.png"), (200, 300)),
-    "4D": pygame.transform.scale(pygame.image.load("img/Diamond/4.png"), (200, 300)),
-    "5D": pygame.transform.scale(pygame.image.load("img/Diamond/5.png"), (200, 300)),
-    "6D": pygame.transform.scale(pygame.image.load("img/Diamond/6.png"), (200, 300)),
-    "7D": pygame.transform.scale(pygame.image.load("img/Diamond/7.png"), (200, 300)),
-    "8D": pygame.transform.scale(pygame.image.load("img/Diamond/8.png"), (200, 300)),
-    "9D": pygame.transform.scale(pygame.image.load("img/Diamond/9.png"), (200, 300)),
-    "10D": pygame.transform.scale(pygame.image.load("img/Diamond/10.png"), (200, 300)),
-    "JD": pygame.transform.scale(pygame.image.load("img/Diamond/J.jpeg"), (200, 300)),
-    "QD": pygame.transform.scale(pygame.image.load("img/Diamond/Q.png"), (200, 300)),
-    "KD": pygame.transform.scale(pygame.image.load("img/Diamond/K.png"), (200, 300)),
-
-    "AH": pygame.transform.scale(pygame.image.load("img/Heart/A.png"), (200, 300)),
-    "2H": pygame.transform.scale(pygame.image.load("img/Heart/2.png"), (200, 300)),
-    "3H": pygame.transform.scale(pygame.image.load("img/Heart/3.png"), (200, 300)),
-    "4H": pygame.transform.scale(pygame.image.load("img/Heart/4.png"), (200, 300)),
-    "5H": pygame.transform.scale(pygame.image.load("img/Heart/5.png"), (200, 300)),
-    "6H": pygame.transform.scale(pygame.image.load("img/Heart/6.png"), (200, 300)),
-    "7H": pygame.transform.scale(pygame.image.load("img/Heart/7.png"), (200, 300)),
-    "8H": pygame.transform.scale(pygame.image.load("img/Heart/8.png"), (200, 300)),
-    "9H": pygame.transform.scale(pygame.image.load("img/Heart/9.png"), (200, 300)),
-    "10H": pygame.transform.scale(pygame.image.load("img/Heart/10.png"), (200, 300)),
-    "JH": pygame.transform.scale(pygame.image.load("img/Heart/J.jpg"), (200, 300)),
-    "QH": pygame.transform.scale(pygame.image.load("img/Heart/Q.png"), (200, 300)),
-    "KH": pygame.transform.scale(pygame.image.load("img/Heart/K.png"), (200, 300)),
-
-    "AS": pygame.transform.scale(pygame.image.load("img/Spades/A.png"), (200, 300)),
-    "2S": pygame.transform.scale(pygame.image.load("img/Spades/2.png"), (200, 300)),
-    "3S": pygame.transform.scale(pygame.image.load("img/Spades/3.png"), (200, 300)),
-    "4S": pygame.transform.scale(pygame.image.load("img/Spades/4.png"), (200, 300)),
-    "5S": pygame.transform.scale(pygame.image.load("img/Spades/5.png"), (200, 300)),
-    "6S": pygame.transform.scale(pygame.image.load("img/Spades/6.png"), (200, 300)),
-    "7S": pygame.transform.scale(pygame.image.load("img/Spades/7.png"), (200, 300)),
-    "8S": pygame.transform.scale(pygame.image.load("img/Spades/8.png"), (200, 300)),
-    "9S": pygame.transform.scale(pygame.image.load("img/Spades/9.png"), (200, 300)),
-    "10S": pygame.transform.scale(pygame.image.load("img/Spades/10.png"), (200, 300)),
-    "JS": pygame.transform.scale(pygame.image.load("img/Spades/J.jpg"), (200, 300)),
-    "QS": pygame.transform.scale(pygame.image.load("img/Spades/Q.png"), (200, 300)),
-    "KS": pygame.transform.scale(pygame.image.load("img/Spades/K.png"), (200, 300)),
-    # Add more card images here
-}
-=======
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
 
 class Button:
     def __init__(self, x, y, width, height, text):
@@ -164,8 +83,6 @@ class Button:
 # Initialize Pygame
 pygame.init()
 
-<<<<<<< HEAD
-=======
 screen_width, screen_height = pygame.display.Info().current_w, pygame.display.Info().current_h
 screen = pygame.display.set_mode((screen_width, screen_height))
 WINDOW_SIZE = (screen_width, screen_height)
@@ -239,7 +156,6 @@ card_images = {
 }
 
 
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
 # Create the deck and shuffle it
 deck = ["2C", "2D", "2H", "2S", "3C", "3D", "3H", "3S", "4C", "4D", "4H", "4S",
         "5C", "5D", "5H", "5S", "6C", "6D", "6H", "6S", "7C", "7D", "7H", "7S",
@@ -252,72 +168,144 @@ player_hand = [deck.pop(), deck.pop()]
 cpu_hand = [deck.pop(), deck.pop()]
 
 
-<<<<<<< HEAD
-
-SCREEN_WIDTH = 2000
-SCREEN_HEIGHT = 1300
-WINDOW_SIZE = (2000, 1300)
-=======
 SCREEN_WIDTH = 1300
 SCREEN_HEIGHT = 1000
 WINDOW_SIZE = (1300, 1000)
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
 # Set up the screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Poker Game")
 
 
-<<<<<<< HEAD
-# Set the colors for the gradient
-GREEN_CENTER = (0, 255, 0)
-DARK_GREEN_OUTER = (0, 128, 0)
-BLACK = (0, 0, 0)
+def run_round2(screen, b1, b2, b3, b4, b5, input_box, player1: Player.Player, player2: Player.Player) -> list[PokerGame]:
+    dealer = random.randint(1, 2)
+    game = PokerGame()
+    turn_order = [player1 if dealer == 1 else player2, player2 if dealer == 1 else player1]
+    corresponding_hand = [1, 2]
+    game.next_stage()
+    p1_initial_cost = int((1 / 200) * turn_order[0].balance)
+    p2_initial_cost = int((1 / 100) * turn_order[1].balance)
+    game.pool += p1_initial_cost
+    game.pool += p2_initial_cost
+    turn_order[0].balance -= p1_initial_cost
+    turn_order[0].bet_this_round = p1_initial_cost
+    turn_order[1].bet_this_round = p2_initial_cost
+    turn_order[1].balance -= p2_initial_cost
+    game.last_bet = p2_initial_cost
+    game_states_so_far = [game.copy()]
 
-# Set the center and radius of the gradient
-CENTER = (WINDOW_SIZE[0] // 2, WINDOW_SIZE[1] // 2)
-RADIUS = min(CENTER)
+    while game.check_winner() is None:
+        # print(f'{game.last_bet} {game.community_cards} {game.stage}')
+        invested_initially = turn_order[game.turn].bet_this_round
+        if isinstance(turn_order[game.turn], HumanPlayer): 
+            human_player = turn_order[game.turn]
+            while not human_player.made_move:
+                for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        # Check if a button was clicked
+                        # WARNING: THIS SHOULD BE A RIGHT CLICK, not LEFT CLICK
+                        if ((raise_button.is_clicked(event.pos) or bet_button.is_clicked(event.pos)) and (input_text != '' and input_text.isdigit())) or fold_button.is_clicked(event.pos) or call_button.is_clicked(event.pos) or check_button.is_clicked(event.pos):
+                            print('test3', game)
+                            # reset has_moved
+                            human_player.made_move = True
+                            human_player.has_moved = True
 
-# Draw the gradient
-for y in range(WINDOW_SIZE[1]):
-    for x in range(WINDOW_SIZE[0]):
-        distance = ((x - CENTER[0]) ** 2 + (y - CENTER[1]) ** 2) ** 0.5
-        if distance > RADIUS:
-            color = BLACK
+                            if human_player.move_button[0] == "bet": 
+                                if human_player.move_button[1] == human_player.balance:
+                                    move = human_player.move_all_in()
+                                else:
+                                    move = human_player.move_bet(human_player.move_button[1])
+
+                            elif human_player.move_button[0] == "check":
+                                move = human_player.move_check()
+
+                            elif human_player.move_button[0] == "call":
+                                last_bet = game.last_bet
+                                move = human_player.move_call(last_bet)
+
+                            elif human_player.move_button[0] == "raise": 
+                                if human_player.move_button[1] == human_player.balance:
+                                    move = human_player.move_all_in()
+                                else:
+                                    move = human_player.move_raise(human_player.move_button[1])
+
+                            else: 
+                                move = human_player.move_fold()
+                
+                human_player.made_move = False
+                        
+                # Render the input box
+                pygame.draw.rect(screen, (0, 0, 0), input_box, 2)
+
+                # Render the input text
+                text_surface = font.render(input_text, True, (0, 0, 0))
+                screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
+
+                # Draw the buttons
+                # TODO: change bet to raise after first bet 
+                b1.draw(screen)
+                b2.draw(screen)
+                b3.draw(screen)
+                b4.draw(screen)
+                b5.draw(screen)
+
+                # Display the cards
+                screen.blit(card_images[player_hand[0]], (500, 500))
+                screen.blit(card_images[player_hand[1]], (550, 500))
+                screen.blit(card_back, (500, 30))
+                screen.blit(card_back, (550, 30))
+                
+                pygame.display.flip()
+
         else:
-            color = pygame.Color(*GREEN_CENTER).lerp(DARK_GREEN_OUTER, distance / RADIUS)
-        pygame.gfxdraw.pixel(screen, x, y, color)
+            move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
+        # print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s{"" if move[0] in {Player.FOLD_CODE, Player.CHECK_CODE, Player.CALL_CODE, Player.ALL_IN_CODE} else " "+str(move[1])}')
+        
+        game.run_move(move, move[1] - invested_initially if game.stage == 1 else -1)
+        if (move[0] == Player.RAISE_CODE or (move[0] == Player.BET_CODE and move[1] > 0) or move[0] == Player.ALL_IN_CODE) and turn_order[game.turn].balance > 0:
+            turn_order[game.turn].has_moved = False  # must move again if raise occurs
+        elif turn_order[game.turn].balance == 0:
+            game.check_winner(True)
+        game.check_winner()
+        if all(p.has_moved for p in turn_order):
+            game.next_stage()
+            turn_order[0].reset_player()
+            turn_order[1].reset_player()
+            game.last_bet = 0
+        game_states_so_far.append(game.copy())
 
-# Update the Pygame display
-# pygame.display.flip()
+        screen.fill(((0, 85, 0)))
 
-# Set up the game loop
-running = True
-human = HumanPlayer()
-=======
-# Set up the game loop
-running = True
-human = HumanPlayer(10000)
-p2 = NaivePlayer(10000)
-# simulated_game = run_round(human, p2)[-1]
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
+        # Render the input box
+        pygame.draw.rect(screen, (0, 0, 0), input_box, 2)
 
-font = pygame.font.SysFont(None, 32)
+        # Render the input text
+        text_surface = font.render(input_text, True, (0, 0, 0))
+        screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
+
+        # Draw the buttons
+        # TODO: change bet to raise after first bet 
+        b1.draw(screen)
+        b2.draw(screen)
+        b3.draw(screen)
+        b4.draw(screen)
+        b5.draw(screen)
+
+        # Display the cards
+        screen.blit(card_images[player_hand[0]], (500, 500))
+        screen.blit(card_images[player_hand[1]], (550, 500))
+        screen.blit(card_back, (500, 30))
+        screen.blit(card_back, (550, 30))
+        
+        pygame.display.flip()
+    
+    return game_states_so_far
 
 # Create the buttons
-<<<<<<< HEAD
-raise_button = Button(510, 1000, 100, 50, "Raise")
-bet_button = Button(620, 1000, 100, 50, "Bet")
-fold_button = Button(730, 1000, 100, 50, "Fold")
-
-user_input = ''
-base_font = pygame.font.Font(None, 32)
-=======
 raise_button = Button(310, 800, 100, 50, "Raise")
 bet_button = Button(420, 800, 100, 50, "Bet")
 fold_button = Button(530, 800, 100, 50, "Fold")
 call_button = Button(640, 800, 100, 50, "Call")
 check_button = Button(750, 800, 100, 50, "Check")
-
 
 # Set up the font
 font = pygame.font.SysFont(None, 32)
@@ -327,38 +315,25 @@ input_box = pygame.Rect(100, 100, 200, 32)
 input_text = ''
 
 clock = pygame.time.Clock()
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
+
+# Set up the game loop
+running = True
+human = HumanPlayer(10000)
+p2 = NaivePlayer(10000)
+simulated_game = run_round2(screen, raise_button, bet_button, fold_button, call_button, check_button, input_box, human, p2)[-1]
+
+font = pygame.font.SysFont(None, 32)
+
+
+
+
 
 while running:
+    print('testtttttt123123123')
     # Handle event
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-<<<<<<< HEAD
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            # Check if a button was clicked
-            if raise_button.is_clicked(event.pos):
-                # Handle raise button click
-                user_input = pygame.prompt("Enter your raise amount:")
-                if user_input is not None and user_input.isdigit():
-                    # Handle raise button click
-                    human.move_button = ("raise", int(user_input))
-                    print(human.move_button)
-
-                human.move_button = ("raise", user_input)
-                print(human.move_button)
-                
-            elif bet_button.is_clicked(event.pos):
-                # Handle bet button click
-                user_input = pygame.prompt("Enter your bet amount:")
-                if user_input is not None and user_input.isdigit():
-                    # Handle bet button click
-                    human.move_button = ("bet", int(user_input))
-                    print(human.move_button)
-
-                human.move_button = ("bet", user_input)
-                print(human.move_button)
-=======
         
         # user text input box
         elif event.type == pygame.KEYDOWN:
@@ -386,14 +361,11 @@ while running:
                     human.move_button = ("bet", int(input_text))
                     print(human.move_button)
                     human.has_moved = True
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
 
             elif fold_button.is_clicked(event.pos):
                 # Handle fold button click
                 human.move_button = ("fold", 0)
                 print(human.move_button)
-<<<<<<< HEAD
-=======
                 print('test')
                 human.has_moved = True
 
@@ -408,7 +380,6 @@ while running:
                 human.move_button = ("check", 0)
                 print(human.move_button)
                 human.has_moved = True
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
         
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
@@ -423,10 +394,8 @@ while running:
     # screen.fill(bg_color)
     # Draw the cards, chips, and other game elements here
 
-<<<<<<< HEAD
-=======
     # Clear the screen
-    screen.fill(((0, 85, 0)))
+    screen.fill((0, 85, 0))
 
     # Render the input box
     pygame.draw.rect(screen, (0, 0, 0), input_box, 2)
@@ -435,50 +404,30 @@ while running:
     text_surface = font.render(input_text, True, (0, 0, 0))
     screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
 
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
     # Draw the buttons
     # TODO: change bet to raise after first bet 
     raise_button.draw(screen)
     bet_button.draw(screen)
     fold_button.draw(screen)
-<<<<<<< HEAD
-=======
     call_button.draw(screen)
     check_button.draw(screen)
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
 
     # Display the cards
     screen.blit(card_images[player_hand[0]], (500, 500))
     screen.blit(card_images[player_hand[1]], (550, 500))
-<<<<<<< HEAD
-    screen.blit(card_back, (800, 100))
-    screen.blit(card_back, (850, 100))
-
-    # Draw the prompt text
-    text_surface = base_font.render(user_input, True, (255, 255, 255))
-    screen.blit(text_surface, (0, 0))
-
-    # Update the screen
-    # pygame.display.update()
-    # TODO: Display the community cards
-=======
     screen.blit(card_back, (500, 30))
     screen.blit(card_back, (550, 30))
 
     # Update the screen
     # pygame.display.update()
     # TODO: Display the community cards (smaller than user cards)
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
     # game.community_cards (after each turn)
 
     # pygame.display.flip()
 
     # Update the game display
     pygame.display.flip()
-<<<<<<< HEAD
-=======
-    clock.tick(30)
->>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
+    # clock.tick(30)
 
 # Quit Pygame
 pygame.quit()
