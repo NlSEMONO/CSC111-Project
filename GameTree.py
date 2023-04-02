@@ -106,6 +106,7 @@ class GameTree:
             current_move = moves[move_number]
             current_state = game_states[move_number]
             classes_of_action = self.get_classes_of_action(current_move, current_state, following, evaluated)
+            print(classes_of_action)
             if not any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())): #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
                 #evaluation an only happen once per stage, hence the first move is an evaluation
                 evaluated = True
@@ -258,8 +259,10 @@ class GameTree:
             self.good_outcomes_in_route = int(curr_stats[2])
             self.total_games_in_route = int(curr_stats[3])
             if current + 1 != len(moves):
-                next_subtree = moves[current + 1].split(';')[0]
-                frozenset_of_action = frozenset(set(next_subtree))
+                next_subtree = moves[current + 1].split(';')[0][1:-1].split(',')
+                for i in range(len(next_subtree)):
+                    next_subtree[i] = next_subtree[i].strip()[1:-1]
+                frozenset_of_action = frozenset(next_subtree)
                 if frozenset_of_action not in self.subtrees:
                     self.add_subtree(frozenset_of_action)
                 self.subtrees[frozenset_of_action].insert_row_moves(moves, current + 1)
@@ -273,7 +276,7 @@ class GameTree:
 if __name__ == '__main__':
     tree = GameTree()
 
-    for _ in range(100):
+    for _ in range(10):
         result = run_round(TestingPlayer(10000), NaivePlayer(10000), False)
         result[-1].check_winner()
         # print(result[-1])
@@ -284,7 +287,6 @@ if __name__ == '__main__':
     tree_copy = copy.copy(tree)
     while len(tree.subtrees) > 0:
         print(tree.classes_of_action)
-        print(tree.move_confidence_value)
         subtrees = list(tree.subtrees.keys())
         tree = tree.subtrees[subtrees[0]]
     print(tree.classes_of_action)
