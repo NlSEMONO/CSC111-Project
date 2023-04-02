@@ -59,7 +59,7 @@ class GameTree:
             current_state = game_states[-1]
             my_hand = current_state.player1_hand if following == 0 else current_state.player2_hand
             opponent_hand = current_state.player2_hand if following == 0 else current_state.player1_hand
-            if current_state.stage == 1: # only folds can trigger this
+            if current_state.stage == 1 or current_state.community_cards == set(): # only folds can trigger this
                 self.total_games_in_route += 1
                 my_hand_good = burner_player.rate_hand(list(my_hand))
                 opponent_hand_good = burner_player.rate_hand(list(opponent_hand))
