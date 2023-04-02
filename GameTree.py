@@ -5,8 +5,13 @@ from __future__ import annotations
 from typing import Any, Optional
 from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND, NUM_TO_RANK
 from GameRunner import NUM_TO_ACTION, run_round
+<<<<<<< HEAD
 from Player import Player, TestingPlayer
 from NaivePlayer import NaivePlayer
+=======
+from Player import Player, TestingPlayer, NaivePlayer
+import copy
+>>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
 
 FOLD_CODE = 0
 CHECK_CODE = 1
@@ -60,6 +65,7 @@ class GameTree:
             current_move = moves[move_number]
             current_state = game_states[move_number]
             classes_of_action = self.get_classes_of_action(current_move, current_state, following, evaluated)
+            print(classes_of_action)
             if not any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())): #the only time the length of classes of action is 2 is for opponent move. Otherwise, it will evaluate
                 #evaluation an only happen once per stage, hence the first move is an evaluation
                 evaluated = True
@@ -202,16 +208,51 @@ class GameTree:
                             self._generate_card_combos(new_used_cards, new_cards_so_far, level_to_stop))
         return all_pairs
 
+    def insert_row_moves(self, moves: list, current: int = 0) -> None:
+        """inserts a row of moves"""
+        if current == len(moves):
+            return
+        else:
+            curr_stats = moves[current].split(';')
+            self.move_confidence_value = float(curr_stats[1])
+            self.good_outcomes_in_route = int(curr_stats[2])
+            self.total_games_in_route = int(curr_stats[3])
+            if current + 1 != len(moves):
+                next_subtree = moves[current + 1].split(';')[0][1:-1].split(',')
+                for i in range(len(next_subtree)):
+                    next_subtree[i] = next_subtree[i].strip()[1:-1]
+                frozenset_of_action = frozenset(next_subtree)
+                if frozenset_of_action not in self.subtrees:
+                    self.add_subtree(frozenset_of_action)
+                self.subtrees[frozenset_of_action].insert_row_moves(moves, current + 1)
 
-tree = GameTree()
+    def __str__(self) -> str:
+        str_so_far = f'{self.classes_of_action};{self.move_confidence_value};'
+        str_so_far += f'{self.good_outcomes_in_route};{self.total_games_in_route}'
+        return str_so_far
 
+<<<<<<< HEAD
 result = run_round(TestingPlayer(10000), NaivePlayer(10000))
 moves = result[-1].get_move_sequence()
 
 tree.insert_moves(moves, result, 0)
+=======
 
-while len(tree.subtrees) > 0:
+if __name__ == '__main__':
+    tree = GameTree()
+>>>>>>> c546d8369a895b1fb11c95739efdcf3cf25ef27f
+
+    for _ in range(10):
+        result = run_round(TestingPlayer(10000), NaivePlayer(10000), False)
+        result[-1].check_winner()
+        # print(result[-1])
+        move_sequence = result[-1].get_move_sequence()
+        # learn from both how p1 could have played and how p2 could have played
+        tree.insert_moves(move_sequence, result, 0)
+        tree.insert_moves(move_sequence, result, 1)
+    tree_copy = copy.copy(tree)
+    while len(tree.subtrees) > 0:
+        print(tree.classes_of_action)
+        subtrees = list(tree.subtrees.keys())
+        tree = tree.subtrees[subtrees[0]]
     print(tree.classes_of_action)
-    subtrees = list(tree.subtrees.keys())
-    tree = tree.subtrees[subtrees[0]]
-print(tree.classes_of_action)
