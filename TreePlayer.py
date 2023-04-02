@@ -194,36 +194,39 @@ if __name__ == '__main__':
     # tp = TreePlayer(10000, 'TreePlayer_100000_games.txt')
     # subtrees = list(tp.games_played.subtrees.keys())
     # tree = copy.copy(tp.games_played)
-    tree = GameTree()
-    for i in range(20000):
-        p1 = TestingPlayer(10000)
-        result = run_round(p1, NaivePlayer(10000), False)
-        result[-1].check_winner()
-        # print(result[-1])
-        move_sequence = result[-1].get_move_sequence()
-        # learn from both how p1 could have played and how p2 could have played
-        tree.insert_moves(move_sequence, result, 0)
-        tree.insert_moves(move_sequence, result, 1)
 
-    game_count = 20000
-    exploration_games = game_count // 4
-    game_thresholds = []
-    for i in range(0, exploration_games):
-        game_thresholds.append(1 - (i / exploration_games))
-    for _ in range(exploration_games, game_count):
-        game_thresholds.append(-1)
-
-    for i in range(game_count):
-        p1 = TreePlayer(10000)
-        p1.games_played = copy.copy(tree)
-        p1.exploring = True if random.random() <= game_thresholds[i] else False
-        result = run_round(p1, NaivePlayer(10000), False)
-        result[-1].check_winner()
-        # print(result[-1])
-        move_sequence = result[-1].get_move_sequence()
-        # learn from both how p1 could have played and how p2 could have played
-        tree.insert_moves(move_sequence, result, 0)
-        tree.insert_moves(move_sequence, result, 1)
+    #sini
+    # tree = GameTree()
+    # for i in range(20000):
+    #     p1 = TestingPlayer(10000)
+    #     result = run_round(p1, NaivePlayer(10000), False)
+    #     result[-1].check_winner()
+    #     # print(result[-1])
+    #     move_sequence = result[-1].get_move_sequence()
+    #     # learn from both how p1 could have played and how p2 could have played
+    #     tree.insert_moves(move_sequence, result, 0)
+    #     tree.insert_moves(move_sequence, result, 1)
+    #
+    # game_count = 20000
+    # exploration_games = game_count // 4
+    # game_thresholds = []
+    # for i in range(0, exploration_games):
+    #     game_thresholds.append(1 - (i / exploration_games))
+    # for _ in range(exploration_games, game_count):
+    #     game_thresholds.append(-1)
+    #
+    # for i in range(game_count):
+    #     p1 = TreePlayer(10000)
+    #     p1.games_played = copy.copy(tree)
+    #     p1.exploring = True if random.random() <= game_thresholds[i] else False
+    #     result = run_round(p1, NaivePlayer(10000), False)
+    #     result[-1].check_winner()
+    #     # print(result[-1])
+    #     move_sequence = result[-1].get_move_sequence()
+    #     # learn from both how p1 could have played and how p2 could have played
+    #     tree.insert_moves(move_sequence, result, 0)
+    #     tree.insert_moves(move_sequence, result, 1)
+    #here
 
     # tp = TreePlayer(10000, 'test.csv')
     # while len(tree.subtrees) > 0:
@@ -251,14 +254,14 @@ if __name__ == '__main__':
     #         c += 1
     # print(c)
     print('done')
-    print_to_file(tree, 'TreePlayer_20000.txt')
-    # p1 = TreePlayer(10000, 'TreePlayer_20000.txt')
-    # p1.exploring = False
-    # result = run_round(p1, NaivePlayer(10000), True)
-    # result[-1].check_winner()
-    # # print(result[-1])
-    # move_sequence = result[-1].get_move_sequence()
-    # # learn from both how p1 could have played and how p2 could have played
-    # tree.insert_moves(move_sequence, result, 0)
-    # tree.insert_moves(move_sequence, result, 1)
-    # tree_copy = copy.copy(tree)
+    #print_to_file(tree, 'TreePlayer_20000.txt')
+    for i in range(10):
+        p1 = TreePlayer(10000, 'TreePlayer_20000.txt')
+        p1.exploring = False
+        result = run_round(p1, NaivePlayer(10000), True)
+        print(result[-1].check_winner())
+        print(result[-1].player1_hand)
+        print(result[-1].player2_hand)
+        # print(result[-1])
+        move_sequence = result[-1].get_move_sequence()
+        print('new game')
