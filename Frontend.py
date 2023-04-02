@@ -148,10 +148,9 @@ player_hand = [deck.pop(), deck.pop()]
 cpu_hand = [deck.pop(), deck.pop()]
 
 
-
-SCREEN_WIDTH = 2000
-SCREEN_HEIGHT = 1300
-WINDOW_SIZE = (2000, 1300)
+SCREEN_WIDTH = 1300
+SCREEN_HEIGHT = 1000
+WINDOW_SIZE = (1300, 1000)
 # Set up the screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Poker Game")
@@ -186,9 +185,9 @@ human = HumanPlayer()
 font = pygame.font.SysFont(None, 32)
 
 # Create the buttons
-raise_button = Button(510, 1000, 100, 50, "Raise")
-bet_button = Button(620, 1000, 100, 50, "Bet")
-fold_button = Button(730, 1000, 100, 50, "Fold")
+raise_button = Button(410, 800, 100, 50, "Raise")
+bet_button = Button(520, 800, 100, 50, "Bet")
+fold_button = Button(630, 800, 100, 50, "Fold")
 
 user_input = ''
 base_font = pygame.font.Font(None, 32)
@@ -247,10 +246,10 @@ while running:
     fold_button.draw(screen)
 
     # Display the cards
-    screen.blit(card_images[player_hand[0]], (500, 500))
-    screen.blit(card_images[player_hand[1]], (550, 500))
-    screen.blit(card_back, (800, 100))
-    screen.blit(card_back, (850, 100))
+    screen.blit(card_images[player_hand[0]], (500, 400))
+    screen.blit(card_images[player_hand[1]], (550, 400))
+    screen.blit(card_back, (500, 100))
+    screen.blit(card_back, (550, 100))
 
     # Draw the prompt text
     text_surface = base_font.render(user_input, True, (255, 255, 255))
