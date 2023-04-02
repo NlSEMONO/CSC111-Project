@@ -252,3 +252,13 @@ if __name__ == '__main__':
     # print(c)
     print('done')
     print_to_file(tree, 'TreePlayer_20000.txt')
+    # p1 = TreePlayer(10000, 'TreePlayer_20000.txt')
+    # p1.exploring = False
+    # result = run_round(p1, NaivePlayer(10000), True)
+    # result[-1].check_winner()
+    # # print(result[-1])
+    # move_sequence = result[-1].get_move_sequence()
+    # # learn from both how p1 could have played and how p2 could have played
+    # tree.insert_moves(move_sequence, result, 0)
+    # tree.insert_moves(move_sequence, result, 1)
+    # tree_copy = copy.copy(tree)
