@@ -31,14 +31,12 @@ def run_round(player1: Player.Player, player2: Player.Player) -> list[PokerGame]
         # print(f'{game.last_bet} {game.community_cards} {game.stage}')
         invested_initially = turn_order[game.turn].bet_this_round
         move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
-
         print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s{"" if move[0] in {Player.FOLD_CODE, Player.CHECK_CODE, Player.CALL_CODE, Player.ALL_IN_CODE} else " "+str(move[1])}')
         game.run_move(move, move[1] - invested_initially if game.stage == 1 else -1)
         if (move[0] == Player.RAISE_CODE or (move[0] == Player.BET_CODE and move[1] > 0) or move[0] == Player.ALL_IN_CODE) and turn_order[game.turn].balance > 0:
             turn_order[game.turn].has_moved = False  # must move again if raise occurs
         elif turn_order[game.turn].balance == 0:
             game.check_winner(True)
-
         game.check_winner()
         if all(p.has_moved for p in turn_order):
             game.next_stage()

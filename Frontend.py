@@ -9,58 +9,50 @@ from pygame.colordict import THECOLORS
 import random
 import math
 import pygame.gfxdraw
-import Player
-
-# class HumanPlayer(Player):
-#     """
-#     Abstract class representing a human player
-#         move_button: (name of the move, bet or raise amount if the move is a bet or raise otherwise 0)
-#     """
-#     move_button: tuple[str, int]
-
-#     # if not fold & check code => bet amount
-#     def __init__(self, move_button: tuple[str, int]) -> None:
-#         super().__init__()
-#         # modify this attribute every turn that user presses a button
-#         self.move_button = move_button
-
-#     def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
-#         """
-#         Always checks if there is no bet, and will fold otherwise
-
-#         Will always bet on first turn
-#         """
-
-        # self.has_moved = True
-        # if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
-        #     return self.move_bet(1)
-        # elif game_state.stage == 1 and self.bet_this_round == 0:
-        #     return self.move_call(game_state.last_bet)
-        # elif game_state.last_bet > 0:
-        #     return self.move_fold()
-        # else:
-        #     return self.move_check()
-
-    
-        
-    
+from Player import Player
+from PokerGame import PokerGame
+from NaivePlayer import NaivePlayer
 
 
 
-    # if {button press on bet button}: 
-    #     return self.move_bet(bet_amount)
-    # if {button press on check button}: 
-    #     return self.move_check()
-    # if {button press on bet button}: 
-    #     return self.move_bet(bet_amount)
-    # if {button press on check button}: 
-    #     return self.move_check()
-    # if {button press on bet button}: 
-    #     return self.move_bet(bet_amount)
-    # if {button press on check button}: 
-    #     return self.move_check()
+class HumanPlayer(Player):
+    """
+    Abstract class representing a human player
+        move_button: (name of the move, bet or raise amount if the move is a bet or raise otherwise 0)
+    """
+    move_button: tuple[str, int]
 
+    # if not fold & check code => bet amount
+    def __init__(self, move_button: tuple[str, int] = ('None', 0)) -> None:
+        super(HumanPlayer).__init__(Player)
+        # modify this attribute every turn that user presses a button
+        self.move_button = move_button
 
+    def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
+        """
+        Always checks if there is no bet, and will fold otherwise
+        Will always bet on first turn
+        """
+        self.has_moved = True
+        if self.move_button[0] == "bet": 
+            if self.move_button[1] == self.balance:
+                return self.move_all_in()
+            return self.move_bet(self.move_button[1])
+
+        elif self.move_button[0] == "check":
+            return self.move_check()
+
+        elif self.move_button[0] == "call":
+            last_bet = game_state.last_bet
+            return self.move_call(last_bet)
+
+        elif self.move_button[0] == "raise": 
+            if self.move_button[1] == self.balance:
+                return self.move_all_in()
+            return self.move_raise(self.move_button[1])
+
+        elif self.move_button[0] == "fold": 
+            return self.move_fold()
 
 # Load card images
 card_back = pygame.transform.scale(pygame.image.load("img/card_back.png"), (200, 300))
@@ -155,10 +147,7 @@ random.shuffle(deck)
 player_hand = [deck.pop(), deck.pop()]
 cpu_hand = [deck.pop(), deck.pop()]
 
-# Create the buttons
-raise_button = Button(510, 1000, 100, 50, "Raise")
-bet_button = Button(620, 1000, 100, 50, "Bet")
-fold_button = Button(730, 1000, 100, 50, "Fold")
+
 
 SCREEN_WIDTH = 2000
 SCREEN_HEIGHT = 1300
@@ -192,8 +181,20 @@ for y in range(WINDOW_SIZE[1]):
 
 # Set up the game loop
 running = True
+human = HumanPlayer()
+
+font = pygame.font.SysFont(None, 32)
+
+# Create the buttons
+raise_button = Button(510, 1000, 100, 50, "Raise")
+bet_button = Button(620, 1000, 100, 50, "Bet")
+fold_button = Button(730, 1000, 100, 50, "Fold")
+
+user_input = ''
+base_font = pygame.font.Font(None, 32)
+
 while running:
-    # Handle events
+    # Handle event
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -201,19 +202,46 @@ while running:
             # Check if a button was clicked
             if raise_button.is_clicked(event.pos):
                 # Handle raise button click
-                pass
+                user_input = pygame.prompt("Enter your raise amount:")
+                if user_input is not None and user_input.isdigit():
+                    # Handle raise button click
+                    human.move_button = ("raise", int(user_input))
+                    print(human.move_button)
+
+                human.move_button = ("raise", user_input)
+                print(human.move_button)
+                
             elif bet_button.is_clicked(event.pos):
                 # Handle bet button click
-                pass
+                user_input = pygame.prompt("Enter your bet amount:")
+                if user_input is not None and user_input.isdigit():
+                    # Handle bet button click
+                    human.move_button = ("bet", int(user_input))
+                    print(human.move_button)
+
+                human.move_button = ("bet", user_input)
+                print(human.move_button)
+
             elif fold_button.is_clicked(event.pos):
                 # Handle fold button click
-                pass
+                human.move_button = ("fold", 0)
+                print(human.move_button)
+        
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_BACKSPACE:
+                user_input = user_input[:-1]
+            else:
+                user_input += event.unicode
+                
+
+
 
     # Draw the screen
     # screen.fill(bg_color)
     # Draw the cards, chips, and other game elements here
 
     # Draw the buttons
+    # TODO: change bet to raise after first bet 
     raise_button.draw(screen)
     bet_button.draw(screen)
     fold_button.draw(screen)
@@ -224,7 +252,13 @@ while running:
     screen.blit(card_back, (800, 100))
     screen.blit(card_back, (850, 100))
 
-    # Display the community cards
+    # Draw the prompt text
+    text_surface = base_font.render(user_input, True, (255, 255, 255))
+    screen.blit(text_surface, (0, 0))
+
+    # Update the screen
+    # pygame.display.update()
+    # TODO: Display the community cards
     # game.community_cards (after each turn)
 
     # pygame.display.flip()
