@@ -11,6 +11,7 @@ from game_tree import GameTree
 from player import TestingPlayer, NaivePlayer
 from game_runner import run_round
 from tree_player import TreePlayer, print_to_file
+from frontend import frontend
 
 if __name__ == '__main__':
     # depending on what you want to do, running this file will do something different
@@ -74,4 +75,4 @@ if __name__ == '__main__':
             p1.games_played = copy.copy(games_played)
             p1.exploring = False
             # replace run_round with the new frontend function
-            result = run_round(p1, NaivePlayer(10000))
+            result = frontend(p1)
