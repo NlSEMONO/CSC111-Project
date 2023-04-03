@@ -4,21 +4,16 @@ DeepPoker Project
 File that runs the UI
 """
 import pygame
-import FrontendTools
-from pygame.colordict import THECOLORS
 import random
-import math
 import pygame.gfxdraw
 import Player
 from PokerGame import PokerGame
 from NaivePlayer import NaivePlayer
-
-from GameRunner import NUM_TO_ACTION, run_round
-
 from time import sleep
+import python_ta
 
 
-
+# Player.Player
 class HumanPlayer(Player.Player):
     """
     Abstract class representing a human player
@@ -43,7 +38,6 @@ class HumanPlayer(Player.Player):
         self.made_move = False
         self.has_moved = True
 
-
         if self.move_button[0] == "bet":
             if self.move_button[1] == self.balance:
                 return self.move_all_in()
@@ -64,8 +58,9 @@ class HumanPlayer(Player.Player):
         elif self.move_button[0] == "fold":
             return self.move_fold()
 
+
 class Button:
-    def __init__(self, x, y, width, height, text, disabled = False):
+    def __init__(self, x, y, width, height, text, disabled=False):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.font = pygame.font.Font(None, 32)
@@ -99,7 +94,6 @@ card_height = int(card_width * 1.4)
 
 # Load card images
 card_back = pygame.transform.scale(pygame.image.load("img/card_back.png"), (card_width, card_height))
-
 
 card_images = {
     "(1, 3)": pygame.transform.scale(pygame.image.load("img/Clover/A.png"), (card_width, card_height)),
@@ -160,19 +154,6 @@ card_images = {
     # Add more card images here
 }
 
-
-# Create the deck and shuffle it
-# deck = ["2C", "2D", "2H", "2S", "3C", "3D", "3H", "3S", "4C", "4D", "4H", "4S",
-#         "5C", "5D", "5H", "5S", "6C", "6D", "6H", "6S", "7C", "7D", "7H", "7S",
-#         "8C", "8D", "8H", "8S", "9C", "9D", "9H", "9S", "AC", "AD", "AH", "AS",
-#         "JC", "JD", "JH", "JS", "KC", "KD", "KH", "KS", "QC", "QD", "QH", "QS"]
-# random.shuffle(deck)
-
-# Deal two cards to each player
-# player_hand = [(1, 1), (2, 1)]
-# cpu_hand = [deck.pop(), deck.pop()]
-
-
 SCREEN_WIDTH = 1300
 SCREEN_HEIGHT = 1000
 WINDOW_SIZE = (1300, 1000)
@@ -181,7 +162,8 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Poker Game")
 
 
-def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, player1: Player.Player, player2: Player.Player) -> list[PokerGame]:
+def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, player1: Player.Player,
+               player2: Player.Player) -> list[PokerGame]:
     dealer = random.randint(1, 2)
     game = PokerGame()
     turn_order = [player1 if dealer == 1 else player2, player2 if dealer == 1 else player1]
@@ -198,11 +180,11 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
     game.last_bet = p2_initial_cost
     game_states_so_far = [game.copy()]
 
-    player_hand = [str(card) for card in (game.player1_hand if type(turn_order[0]) == HumanPlayer else game.player2_hand)]
+    player_hand = [str(card) for card in
+                   (game.player1_hand if type(turn_order[0]) == HumanPlayer else game.player2_hand)]
 
     while game.check_winner() is None:
         print(game.player2_moves, game.player1_moves)
-        # print(f'{game.last_bet} {game.community_cards} {game.stage}')
         invested_initially = turn_order[game.turn].bet_this_round
         if isinstance(turn_order[game.turn], HumanPlayer):
             human_player = turn_order[game.turn]
@@ -215,17 +197,18 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                         else:
                             input_text += event.unicode
 
-                    # if game.last_bet = 0, disable call and raise 
+                    # if game.last_bet = 0, disable call and raise
                     # disable betting/check when last_bet != 0
                     # disable raise if the humanplayer.has_raised
-                    # prevent from betting above balance 
-                    # display balance on screen 
+                    # prevent from betting above balance
+                    # display balance on screen
 
-                        
                     elif event.type == pygame.MOUSEBUTTONDOWN:
                         # Check if a button was clicked
                         # WARNING: THIS SHOULD BE A RIGHT CLICK, not LEFT CLICK
-                        if ((raise_button.is_clicked(event.pos) or bet_button.is_clicked(event.pos)) and (input_text != '' and input_text.isdigit())) or fold_button.is_clicked(event.pos) or call_button.is_clicked(event.pos) or check_button.is_clicked(event.pos):
+                        if ((raise_button.is_clicked(event.pos) or bet_button.is_clicked(event.pos)) and (
+                                input_text != '' and input_text.isdigit())) or fold_button.is_clicked(
+                            event.pos) or call_button.is_clicked(event.pos) or check_button.is_clicked(event.pos):
                             print('BUTTON CLCICKED', game)
                             # reset has_moved
                             human_player.made_move = True
@@ -235,8 +218,9 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                             print('cpu moves: ', cpu_moves)
 
                             # disable betting/check when last_bet != 0
-                            # prevent from betting above balance 
-                            if bet_button.is_clicked(event.pos) and game.last_bet == 0 and int(input_text) <= human_player.balance:
+                            # prevent from betting above balance
+                            if bet_button.is_clicked(event.pos) and game.last_bet == 0 and int(
+                                    input_text) <= human_player.balance:
                                 if input_text == human_player.balance:
                                     print("ALL IN")
                                     move = human_player.move_all_in()
@@ -248,16 +232,18 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                             elif check_button.is_clicked(event.pos) and game.last_bet == 0:
                                 print("Check last bet", game.last_bet, game.last_bet == 0)
                                 move = human_player.move_check()
-                            
-                            # if game.last_bet = 0, disable call and raise 
+
+                            # if game.last_bet = 0, disable call and raise
                             elif call_button.is_clicked(event.pos) and game.last_bet != 0:
                                 print("CALL")
                                 last_bet = game.last_bet
                                 move = human_player.move_call(last_bet)
-                            
-                            # if game.last_bet = 0, disable call and raise 
+
+                            # if game.last_bet = 0, disable call and raise
                             # disable raise if the humanplayer.has_raised
-                            elif raise_button.is_clicked(event.pos) and game.last_bet != 0 and not human_player.has_raised and int(input_text) <= human_player.balance:
+                            elif raise_button.is_clicked(
+                                    event.pos) and game.last_bet != 0 and not human_player.has_raised and int(
+                                input_text) <= human_player.balance:
                                 if input_text == human_player.balance:
                                     print("ALL-IN")
                                     move = human_player.move_all_in()
@@ -268,18 +254,18 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                             elif fold_button.is_clicked(event.pos):
                                 print("FOLDED")
                                 move = human_player.move_fold()
-                            
+
                             else:
                                 print("YOU CAN'T DO THAT")
                                 human_player.made_move = False
 
-                screen.fill(((0, 85, 0)))
+                screen.fill((0, 85, 0))
 
                 # Render the input box
                 pygame.draw.rect(screen, (0, 0, 0), input_box, 2)
 
                 # Set the background color of the input_box
-                background_color = (255, 255, 255) # WHite
+                background_color = (255, 255, 255)  # WHite
                 pygame.draw.rect(screen, background_color, input_box)
 
                 # Render the input text
@@ -293,8 +279,7 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                 # Draw the text onto the screen
                 screen.blit(text_surface, (input_box.x, input_box.y - 30))
 
-
-                ### DISPLAYING CPU move 
+                # DISPLAYING CPU move
                 # Define the player moves
                 if type(turn_order[game.turn]) == HumanPlayer:
                     if game.turn == 0:
@@ -303,27 +288,21 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                     else:
                         cpu_moves = game.player1_moves
                         human_moves = game.player2_moves
-                    # print('cpu: player2', game.player2_moves)
-                    # print("Human: Player1 ", game.player1_moves)
-                else: 
+                else:
                     if game.turn == 0:
                         cpu_moves = game.player1_moves
                         human_moves = game.player2_moves
                     else:
                         cpu_moves = game.player2_moves
                         human_moves = game.player1_moves
-                    # print("cpu: player1 ", game.player1_moves)
-                    # print("human: player2 ", game.player2_moves)
 
-                
-                
                 # Define the text box properties
                 text_box_width = 350
                 text_box_height = len(cpu_moves) * font.get_linesize()
                 text_box_x = 100
                 text_box_y = 100
-                text_box_color = (255, 255, 255) # White
-                text_color = (0, 0, 0) # Black
+                text_box_color = (255, 255, 255)  # White
+                text_color = (0, 0, 0)  # Black
                 # Create the text box surface
                 text_box_surface = pygame.Surface((text_box_width, text_box_height))
                 text_box_surface.fill(text_box_color)
@@ -366,23 +345,22 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
 
                 # RENDER Move History Description
                 # Render the string with white font color
-                text_surface_AI = font.render("AI", True, (255, 255, 255))
+                text_surface_ai = font.render("AI", True, (255, 255, 255))
                 text_surface_user = font.render("USER", True, (255, 255, 255))
 
                 # Draw the text onto the screen
-                screen.blit(text_surface_AI, (130, 70))
+                screen.blit(text_surface_ai, (130, 70))
                 screen.blit(text_surface_user, (280, 70))
 
                 # # Draw the text box onto the screen
                 screen.blit(text_box_surface, (text_box_x, text_box_y))
 
-
-                # if game.last_bet = 0, disable call and raise 
+                # if game.last_bet = 0, disable call and raise
                 # disable betting/check when last_bet != 0
                 # disable raise if the humanplayer.has_raised
-                # prevent from betting above balance 
+                # prevent from betting above balance
                 # display balance on screen
-                
+
                 # raise_button = Button(350, 900, 100, 50, "Raise")
                 # bet_button = Button(460, 900, 100, 50, "Bet")
                 # fold_button = Button(570, 900, 100, 50, "Fold")
@@ -404,10 +382,6 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                     raise_button.disabled = True
                 else:
                     raise_button.disabled = False
-                    
-
-                # TODO: enable these 
-
 
                 # Draw the buttons
                 b1.draw(screen)
@@ -435,7 +409,7 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                 box_color = (0, 0, 0)
                 box_width = 500
                 box_height = 100
-                box_x = (1600 - box_width) 
+                box_x = (1600 - box_width)
                 box_y = 0
                 box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
 
@@ -449,7 +423,7 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                 box_color = (0, 0, 0)
                 box_width = 500
                 box_height = 70
-                box_x = (1600 - box_width) 
+                box_x = (1600 - box_width)
                 box_y = 50
                 box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
 
@@ -464,12 +438,10 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
 
         else:
             move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
-        # print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s{"" if move[0] in {Player.FOLD_CODE, Player.CHECK_CODE, Player.CALL_CODE, Player.ALL_IN_CODE} else " "+str(move[1])}')
-
-        # print(move[1])
         game.run_move(move, move[1] - invested_initially if game.stage == 1 else -1)
-        if (move[0] == Player.RAISE_CODE or (move[0] == Player.BET_CODE and move[1] > 0) or move[0] == Player.ALL_IN_CODE) and turn_order[game.turn].balance > 0:
-            turn_order[game.turn].has_moved = False  # must move again if raise occurs
+        if (move[0] == Player.RAISE_CODE or (move[0] == Player.BET_CODE and move[1] > 0) or
+            move[0] == Player.ALL_IN_CODE) and turn_order[game.turn].balance > 0:
+                turn_order[game.turn].has_moved = False  # must move again if raise occurs
         elif turn_order[game.turn].balance == 0:
             game.check_winner(True)
         game.check_winner()
@@ -479,7 +451,7 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
             turn_order[1].reset_player()
             game.last_bet = 0
         game_states_so_far.append(game.copy())
-    
+
     screen.fill((0, 0, 0))
     pygame.display.flip()
 
@@ -488,18 +460,15 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
     screen.blit(card_images[player_hand[1]], (550, 600))
 
     # Display the AI cards
-    AI_cards = [str(card) for card in (game.player2_hand if type(turn_order[0]) == HumanPlayer else game.player1_hand)]
-    screen.blit(card_images[AI_cards[0]], (500, 30))
-    screen.blit(card_images[AI_cards[1]], (550, 30))
-    # screen.blit(card_back, (500, 30))
-    # screen.blit(card_back, (550, 30))
+    ai_cards = [str(card) for card in (game.player2_hand if type(turn_order[0]) == HumanPlayer else game.player1_hand)]
+    screen.blit(card_images[ai_cards[0]], (500, 30))
+    screen.blit(card_images[ai_cards[1]], (550, 30))
 
     com_cards = [str(card) for card in game.community_cards]
 
     if com_cards:
         for i in range(len(com_cards)):
             screen.blit(card_images[com_cards[i]], (440 + i * 50, 310))
-    
 
     pygame.display.flip()
     sleep(5)
@@ -512,7 +481,6 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
         # Draw the text onto the screen
         screen.blit(text_surface, (600, 400))
 
-        
     elif type(turn_order[game.winner - 1]) == HumanPlayer:
         print('winner: human', 'game.winner: ', game.winner, type(player1))
 
@@ -524,14 +492,13 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
         else:
             text_surface = font.render('You Won!', True, (255, 255, 255))
             screen.blit(text_surface, (600, 400))
-        
+
     else:
         print('winner: CPU', 'game.winner: ', game.winner, type(player1))
         text_surface = font.render('You Lost :(', True, (255, 255, 255))
 
         # Draw the text onto the screen
         screen.blit(text_surface, (600, 400))
-        
 
     pygame.display.flip()
     sleep(5)
@@ -541,8 +508,9 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
     fold_button.disabled = False
     call_button.disabled = False
     check_button.disabled = False
-    
+
     return game_states_so_far
+
 
 # Create the buttons
 raise_button = Button(350, 900, 100, 50, "Raise")
@@ -565,16 +533,19 @@ clock = pygame.time.Clock()
 running = True
 human = HumanPlayer(10000)
 p2 = NaivePlayer(10000)
-simulated_game = run_round2(screen, raise_button, bet_button, fold_button, call_button, check_button, input_box, input_text, player2_box, human, p2)[-1]
+simulated_game = \
+    run_round2(screen, raise_button, bet_button, fold_button, call_button, check_button, input_box, input_text,
+               player2_box,
+               human, p2)[-1]
 
 font = pygame.font.SysFont(None, 32)
-
 
 # Quit Pygame
 pygame.quit()
 
-# bet & raise: user has to specify the quantity
-# bet: first raise
-# disable bet after raise
-# call: only after bet or raise:
-# checK: I don't wanna bet, just open card (only when the other player doesn't bet or raise) -> need to fold or raise after the bet
+python_ta.check_all(config={
+    'max-line-length': 120,
+    'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'Player', 'PokerGame', 'NaivePlayer', 'sleep'],
+    'allowed-io': ['make_move'],
+    'generated-members': ['pygame.*']
+})
