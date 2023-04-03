@@ -6,15 +6,15 @@ File that runs the UI
 import pygame
 import random
 import pygame.gfxdraw
-import Player
-from PokerGame import PokerGame
+import player
+from poker_game import PokerGame
 from NaivePlayer import NaivePlayer
 from time import sleep
-import python_ta
+# import python_ta
 
 
 # Player.Player
-class HumanPlayer(Player.Player):
+class HumanPlayer(player.Player):
     """
     Abstract class representing a human player
         move_button: (name of the move, bet or raise amount if the move is a bet or raise otherwise 0)
@@ -25,7 +25,7 @@ class HumanPlayer(Player.Player):
 
     # if not fold & check code => bet amount
     def __init__(self, balance: int, move_button: tuple[str, int] = ('None', 0), made_move: bool = False) -> None:
-        Player.Player.__init__(self, balance)
+        player.Player.__init__(self, balance)
         # modify this attribute every stage that user presses a button
         self.move_button = move_button
         self.made_move = made_move
@@ -162,8 +162,8 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Poker Game")
 
 
-def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, player1: Player.Player,
-               player2: Player.Player) -> list[PokerGame]:
+def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, player1: player.Player,
+               player2: player.Player) -> list[PokerGame]:
     dealer = random.randint(1, 2)
     game = PokerGame()
     turn_order = [player1 if dealer == 1 else player2, player2 if dealer == 1 else player1]
@@ -439,8 +439,8 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
         else:
             move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
         game.run_move(move, move[1] - invested_initially if game.stage == 1 else -1)
-        if (move[0] == Player.RAISE_CODE or (move[0] == Player.BET_CODE and move[1] > 0) or
-            move[0] == Player.ALL_IN_CODE) and turn_order[game.turn].balance > 0:
+        if (move[0] == player.RAISE_CODE or (move[0] == player.BET_CODE and move[1] > 0) or
+            move[0] == player.ALL_IN_CODE) and turn_order[game.turn].balance > 0:
                 turn_order[game.turn].has_moved = False  # must move again if raise occurs
         elif turn_order[game.turn].balance == 0:
             game.check_winner(True)
@@ -543,9 +543,9 @@ font = pygame.font.SysFont(None, 32)
 # Quit Pygame
 pygame.quit()
 
-python_ta.check_all(config={
-    'max-line-length': 120,
-    'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'Player', 'PokerGame', 'NaivePlayer', 'sleep'],
-    'allowed-io': ['make_move'],
-    'generated-members': ['pygame.*']
-})
+# python_ta.check_all(config={
+#     'max-line-length': 120,
+#     'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'Player', 'PokerGame', 'NaivePlayer', 'sleep'],
+#     'allowed-io': ['make_move'],
+#     'generated-members': ['pygame.*']
+# })

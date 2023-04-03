@@ -2,8 +2,8 @@
 A naive player who will bet/raise when they have a good hand, and will fold if they don't (relative to the enemy bets)
 """
 
-from Player import Player
-from PokerGame import Card, PokerGame
+from player import Player
+from poker_game import Card, PokerGame
 
 
 class NaivePlayer(Player):
