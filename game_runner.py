@@ -7,14 +7,22 @@ and with no restrictions on raise values.
 This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah Lee
 """
 from poker_game import PokerGame
-import player
+from player import Player, NaivePlayer, TestingPlayer
 import random
 
-NUM_TO_ACTION = {Player.FOLD_CODE: 'Fold', Player.CHECK_CODE: 'Check', Player.CALL_CODE: 'Call',
-                 Player.BET_CODE: 'Bet', Player.RAISE_CODE: 'Raise', Player.ALL_IN_CODE: 'All-in'}
+# STATICS FOR MOVE CODES
+FOLD_CODE = 0
+CHECK_CODE = 1
+CALL_CODE = 2
+BET_CODE = 3
+RAISE_CODE = 4
+ALL_IN_CODE = 5
+
+NUM_TO_ACTION = {FOLD_CODE: 'Fold', CHECK_CODE: 'Check', CALL_CODE: 'Call',
+                 BET_CODE: 'Bet', RAISE_CODE: 'Raise', ALL_IN_CODE: 'All-in'}
 
 
-def run_round(player1: Player.Player, player2: Player.Player, should_print: bool = True) -> list[PokerGame]:
+def run_round(player1: Player, player2: Player, should_print: bool = True) -> list[PokerGame]:
     """
     Simulates a round of poker (one game from Pre-flop to showdown)
 
@@ -24,7 +32,7 @@ def run_round(player1: Player.Player, player2: Player.Player, should_print: bool
     - should_print: if the round should be printed.
 
     Preconditions:
-        - player1 and player2 are valid Player objects constructed from the Player parent class in Player.py
+        - player1 and player2 are valid Player objects constructed from the Player parent class in Parameterspy
     """
     dealer = random.randint(1, 2)
     game = PokerGame()
@@ -48,10 +56,10 @@ def run_round(player1: Player.Player, player2: Player.Player, should_print: bool
         move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
         if should_print:
             print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s'
-                  f'{"" if move[0] not in {Player.RAISE_CODE, Player.BET_CODE}else " "+str(move[1])}')
+                  f'{"" if move[0] not in {RAISE_CODE, BET_CODE}else " "+str(move[1])}')
         game.run_move(move, move[1] - invested_initially if game.stage == 1 else -1)
-        if (move[0] == Player.RAISE_CODE or
-            (move[0] == Player.BET_CODE and move[1] > 0) or move[0] == Player.ALL_IN_CODE) and \
+        if (move[0] == RAISE_CODE or
+            (move[0] == BET_CODE and move[1] > 0) or move[0] == ALL_IN_CODE) and \
                 turn_order[game.turn].balance > 0:
             turn_order[game.turn].has_moved = False  # must move again if raise occurs
         elif turn_order[game.turn].balance == 0:
@@ -73,8 +81,8 @@ def run_round(player1: Player.Player, player2: Player.Player, should_print: bool
 if __name__ == '__main__':
     games = 200
     for i in range(games):
-        p1 = Player.TestingPlayer(10000)
-        p2 = Player.NaivePlayer(10000)
+        p1 = TestingPlayer(10000)
+        p2 = NaivePlayer(10000)
         result = run_round(p1, p2, False)[-1]
         print(f'Player {result.winner} has won the game and {result.pool} currency!')
         print(result)
