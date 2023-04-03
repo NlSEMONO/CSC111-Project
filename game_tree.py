@@ -12,6 +12,7 @@ from poker_game import Card, Move, PokerGame, NUM_TO_POKER_HAND, NUM_TO_RANK
 from game_runner import NUM_TO_ACTION, run_round
 from player import Player, TestingPlayer, NaivePlayer
 import copy
+import python_ta
 
 # Static variables for what specific integers mean in the context of moves
 FOLD_CODE = 0
@@ -390,3 +391,11 @@ if __name__ == '__main__':
         subtrees = list(tree.subtrees.keys())
         tree = tree.subtrees[subtrees[0]]
     print(tree.classes_of_action)
+
+python_ta.check_all(config={
+    'max-line-length': 120,
+    'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'player', 'poker_game', 'NaivePlayer', 'time'],
+    'allowed-io': ['make_move', 'HumanPlayer', 'run_round2'],
+    'generated-members': ['pygame.*'],
+    'disable': ['E9997', 'E9992']
+})

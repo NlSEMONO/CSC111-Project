@@ -69,6 +69,12 @@ class HumanPlayer(player.Player):
 
         else:
             return self.move_fold()
+    def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
+        """
+        Returns bet size.
+        This is not required for this player.
+        """
+        return 0
 
 
 class Button:
@@ -543,8 +549,8 @@ def frontend(tree_player: TreePlayer) -> PokerGame:
     human = HumanPlayer(10000)
     p2 = tree_player
     simulated_game = \
-        run_round2([screen, card_images, card_back], [raise_button, bet_button, fold_button, call_button, check_button], [input_box, input_text],
-                   [human, p2], pygame.font.SysFont(None, 32))[-1]
+        run_round2([screen, card_images, card_back], [raise_button, bet_button, fold_button, call_button, check_button],
+                   [input_box, input_text], [human, p2], pygame.font.SysFont(None, 32))[-1]
 
     return simulated_game
 
@@ -553,10 +559,10 @@ def frontend(tree_player: TreePlayer) -> PokerGame:
 pygame.quit()
 
 #
-# python_ta.check_all(config={
-#     'max-line-length': 120,
-#     'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'player', 'poker_game', 'NaivePlayer', 'time'],
-#     'allowed-io': ['make_move', 'HumanPlayer', 'run_round2'],
-#     'generated-members': ['pygame.*'],
-#     'disable': ['E9997', 'E9992']
-# })
+python_ta.check_all(config={
+    'max-line-length': 120,
+    'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'player', 'poker_game', 'NaivePlayer', 'time'],
+    'allowed-io': ['make_move', 'HumanPlayer', 'run_round2'],
+    'generated-members': ['pygame.*'],
+    'disable': ['E9997', 'E9992']
+})

@@ -9,6 +9,7 @@ This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah
 from poker_game import PokerGame
 from player import Player, NaivePlayer, TestingPlayer
 import random
+import python_ta
 
 # STATICS FOR MOVE CODES
 FOLD_CODE = 0
@@ -86,3 +87,11 @@ if __name__ == '__main__':
         result = run_round(p1, p2, False)[-1]
         print(f'Player {result.winner} has won the game and {result.pool} currency!')
         print(result)
+
+python_ta.check_all(config={
+    'max-line-length': 120,
+    'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'player', 'poker_game', 'NaivePlayer', 'time'],
+    'allowed-io': ['make_move', 'HumanPlayer', 'run_round2'],
+    'generated-members': ['pygame.*'],
+    'disable': ['E9997', 'E9992']
+})
