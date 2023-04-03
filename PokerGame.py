@@ -1,6 +1,11 @@
 """
 DeepPoker Project
-File for class that represents a game (state) of poker
+
+This module contains a class representing a game state of poker. This object also contains critical methods that
+determine the strength of the best poker hand that can be formed given a list of cards and another
+determine what two poker hands are stronger given some information about the poker hands.
+
+This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah Lee
 """
 from __future__ import annotations
 import random
@@ -187,6 +192,7 @@ class PokerGame:
             self.winner = 1
             return self.winner
 
+        # if showdown, add community cards until there are 5
         if all_in:
             while len(self.community_cards) < 5:
                 self.community_cards.add(self._pick_card())
@@ -453,3 +459,12 @@ class PokerGame:
         copy.stage = self.stage
         copy.winner = self.winner
         return copy
+
+
+if __name__ == '__main__':
+    import python_ta
+    python_ta.check_all(config={
+        'extra-imports': ['__future__', 'random', 'typing'],  # the names (strs) of imported modules
+        'allowed-io': [''],  # the names (strs) of functions that call print/open/input
+        'max-line-length': 120
+    })

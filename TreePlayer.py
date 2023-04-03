@@ -49,6 +49,12 @@ class TreePlayer(Player):
     old_comm_cards: set[Card]
 
     def __init__(self, balance: int, file: str = 'bruh.kkax') -> None:
+        """
+        Initializer for TreePlayer
+
+        Preconditions:
+        - balance
+        """
         super().__init__(balance)
         self.new_stage = True
         self.choices = []

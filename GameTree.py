@@ -1,5 +1,10 @@
 """
-File for game trees: a tree that represents all the collective move sequences played over many simulated poker games
+DeepPoker Project
+
+This module contains a class representing a sequence of types of situations/actions that occur in a round of poker.
+It is based on the tree ADT.
+
+This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah Lee
 """
 from __future__ import annotations
 from typing import Any, Optional
@@ -8,15 +13,19 @@ from GameRunner import NUM_TO_ACTION, run_round
 from Player import Player, TestingPlayer, NaivePlayer
 import copy
 
+# Static variables for what specific integers mean in the context of moves
 FOLD_CODE = 0
 CHECK_CODE = 1
 CALL_CODE = 2
 BET_CODE = 3
 RAISE_CODE = 4
+ALL_IN_CODE = 5
 
+# constant for determining what is considered an adequate quotient (how many outcomes out of 6)
+# to be considered a legitimate threat
 THREAT_CONSTANT = 6
 
-burner_player = Player(10) # player object to access player methods
+burner_player = Player(10)  # player object to access player methods
 
 
 class GameTree:
@@ -30,6 +39,8 @@ class GameTree:
     - If the classes of action is an empty set, the tree's current node represents the start of the game, where no moves
     have been played.
     - all(c == self.subtrees[c].classes_of_action for c in self.subtrees)
+    - 0.0 <= self.move_confidence_value <= 1.0
+    - self.total_games_in_route >= self.good_outcomes_in_route
     """
     classes_of_action: Optional[set[str]]
     subtrees: dict[frozenset[str], GameTree]
@@ -38,6 +49,9 @@ class GameTree:
     total_games_in_route: int
 
     def __init__(self, node_val: Optional[set[str]] = None) -> None:
+        """
+        Initializer for a sequence of game situations or moves in poker.
+        """
         self.classes_of_action = node_val
         self.subtrees = {}
         self.move_confidence_value = 0
@@ -48,44 +62,49 @@ class GameTree:
                      move_number: int = 0) -> bool:
         """
         Inserts a sequence of moves into the tree. Will insert the move at move_number into a new subtree or current
-        subtree of appropriate height (ie. if move_number is 0, the move will go into a subtree of height 1, as that is
+        subtree of appropriate height (i.e. if move_number is 0, the move will go into a subtree of height 1, as that is
         the first move played in the game).
-        Classes of action are based on the player we are 'following' (ie. player whose information we share)
+
+        Classes of action are based on the player we are 'following' (i.e. player whose information we share)
+        NOTE: Classes of action are just a fancy name for tags that accurately describe the situation or event being
+        experienced.
+
         Preconditions:
         - len(moves) == len(game_states)
         - 0 <= move_number < len(moves)
         - following in {0, 1}
         """
-        if move_number == len(moves): # last move was the last move
+        if move_number == len(moves):  # last move was the last move
             current_state = game_states[-1]
             my_hand = current_state.player1_hand if following == 0 else current_state.player2_hand
             opponent_hand = current_state.player2_hand if following == 0 else current_state.player1_hand
-            if current_state.stage == 1 or current_state.community_cards == set(): # only folds can trigger this
+            if current_state.stage == 1 or current_state.community_cards == set():  # only folds can trigger this
                 self.total_games_in_route += 1
                 my_hand_good = burner_player.rate_hand(list(my_hand))
                 opponent_hand_good = burner_player.rate_hand(list(opponent_hand))
+                # getting opponent to fold when they have a theoretically better hand is always good
                 if opponent_hand_good == 1 and my_hand_good == 2:
                     self.good_outcomes_in_route += 1
                     self._update_confidence_value()
                     return True
-            elif current_state.stage == 4: # only folds can trigger this
+            elif current_state.stage == 4:  # only folds can trigger this
                 self.total_games_in_route += 1
                 p1_score = current_state.rank_poker_hand(my_hand)
                 p2_score = current_state.rank_poker_hand(opponent_hand)
                 if current_state.determine_winner(p1_score, p2_score) == 2:
-                    # folding in a disadvantageous position is generally good and getting an opponent who has an advantage
-                    # to fold is a good outcome as well
+                    # folding in a disadvantageous position is generally good and getting an opponent who has an
+                    #  advantage to fold is a good outcome as well
                     self.good_outcomes_in_route += 1
                     self._update_confidence_value()
                     return True
-            elif current_state.stage == 5: # only showdowns can trigger this
+            elif current_state.stage == 5:  # only showdowns can trigger this
                 self.total_games_in_route += 1
                 # won and made decent money
                 if current_state.winner == following + 1 and any(move[0] in {RAISE_CODE, CALL_CODE, BET_CODE} for move in moves):
                     self.good_outcomes_in_route += 1
                     self._update_confidence_value()
                     return True
-            else: # only folds can trigger
+            else:  # only folds can trigger
                 self.total_games_in_route += 1
                 used_cards = current_state.community_cards.union(my_hand.union(opponent_hand))
                 next_comm_cards = self._generate_card_combos(used_cards, set(), 4 - len(current_state.community_cards))
@@ -96,8 +115,8 @@ class GameTree:
                     if current_state.determine_winner(p1_score, p2_score) == 1:
                         positive_outcomes += 1
                 if positive_outcomes < len(next_comm_cards) / 2:
-                    # folding in a disadvantageous position is generally good and getting an opponent who has an advantage
-                    # to fold is a good outcome as well
+                    # folding in a disadvantageous position is generally good and getting an opponent who has an
+                    # advantage to fold is a good outcome as well
                     self.good_outcomes_in_route += 1
                     self._update_confidence_value()
                     return True
@@ -111,6 +130,7 @@ class GameTree:
                 # an evaluation occurs if and only if there were no player actions in the classes of action
                 evaluated = True
             immutable_actions = frozenset(classes_of_action)
+            # add a new subtree for class of action if it doesn't already exist
             if immutable_actions not in self.subtrees:
                 self.add_subtree(immutable_actions)
             if move_number + 1 != len(moves):  # checks to see if the next game_state has changed rounds
@@ -127,24 +147,33 @@ class GameTree:
             return False
 
     def _update_confidence_value(self) -> None:
+        """
+        Update the confidence value of the current node (represented by self).
+        """
         self.move_confidence_value = self.good_outcomes_in_route / self.total_games_in_route
 
-    def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluated: bool, evaluate_move: bool = True) -> set[str]:
-
+    def get_classes_of_action(self, move: Move, game_state: PokerGame, following: int, evaluated: bool,
+                              evaluate_move: bool = True) -> set[str]:
         """
         Returns 'tags' or what we call 'classes of action' characteristic of the given input board_state and
         corresponding move played.
+
         Classes of action contain 4 things, if we are following the player whose hand we know (we can't assume we know
         the opponent's hand): the strength of the best possible poker hand the player can make at the moment, strong
         poker hands that the player can threaten if they get 'lucky', and the type of move they played.
         When we are not following the player's whose hand we know, classes of action may only contain two items:
         poker hands that can threaten the player who we are following and the type of move that was played.
+
+        Preconditions:
+        - following in {1, 2}
         """
         classes_so_far = set()
+        # determine whose hand we can see
         if following == 0:
             player_hand = game_state.player1_hand
         else:
             player_hand = game_state.player2_hand
+        #
         if game_state.stage == 1 and (not evaluated):
             hand_to_check = list(player_hand)
             hand_to_check.sort()
@@ -208,19 +237,34 @@ class GameTree:
         return classes_so_far
 
     def add_subtree(self, classes_of_action: frozenset[str]) -> None:
-
         """
         Adds a new subtree to the tree's list of subtrees
+
+        Preconditions:
+        - classes_of_action not in self.subtrees
         """
         self.subtrees[classes_of_action] = GameTree(set(classes_of_action))
 
-    def _determine_threats(self, game_state: PokerGame, used_cards: set[Card], current_best: tuple[Any, ...]) -> Optional[str]:
+    def _determine_threats(self, game_state: PokerGame, used_cards: set[Card],
+                           current_best: tuple[Any, ...]) -> Optional[str]:
+        """
+        Determine what kind of poker hand is likely enough to come out for the opponent to be legitimately considered a
+        threat.
+
+        Preconditions:
+        - all(card in used_cards for card in game_state.community_cards)
+        - all(card in used_cards for card in game_state.player1_hand) or \
+          all(card in used_cards for card in game_state.player2_hand)
+        - current_best is an output of rank_poker_hands
+        """
         all_hands = self._generate_card_combos(used_cards, set(), 1)
         better_hands = [0] * (current_best[0] + 1)
         for hand in all_hands:  # determine threatening hands the opponent can have
             hand_rank = game_state.rank_poker_hand(hand)
             if hand_rank[0] < current_best[0] or game_state.determine_winner(current_best, hand_rank) == 2:
                 better_hands[hand_rank[0]] += 1
+        # turn better_hands into a PSA (because we will determine the strongest hand that is a 'threat', where all
+        # stronger poker hands are counted towards the 'threat')
         for i in range(1, len(better_hands)):
             better_hands[i] = better_hands[i] + better_hands[i - 1]
         i = 1
@@ -232,10 +276,13 @@ class GameTree:
         else:
             return None
 
-    def _generate_card_combos(self, used_cards: set[Card], cards_so_far: set[Card], level_to_stop: int) -> list[
-        set[Card]]:
+    def _generate_card_combos(self, used_cards: set[Card], cards_so_far: set[Card],
+                              level_to_stop: int) -> list[set[Card]]:
         """
         Returns all the possible pairs of cards that have not appeared in used_cards
+
+        Preconditions:
+        - level_to_stop >= 0
         """
         all_pairs = []
         for i in range(1, 14):
@@ -252,7 +299,12 @@ class GameTree:
         return all_pairs
 
     def insert_row_moves(self, moves: list, current: int = 0) -> None:
-        """inserts a row of moves"""
+        """
+        Inserts a row of moves as a down a tree.
+
+        Preconditions:
+        - represents a sequence of nodes to be inserted, delimited by semicolons
+        """
         if current == len(moves):
             return
         else:
@@ -270,6 +322,9 @@ class GameTree:
                 self.subtrees[frozenset_of_action].insert_row_moves(moves, current + 1)
 
     def __str__(self) -> str:
+        """
+        Turns relevant information from a node into a string delimited by semicolons
+        """
         str_so_far = f'{self.classes_of_action};{self.move_confidence_value};'
         str_so_far += f'{self.good_outcomes_in_route};{self.total_games_in_route}'
         return str_so_far
@@ -277,7 +332,6 @@ class GameTree:
 
 if __name__ == '__main__':
     tree = GameTree()
-
     for _ in range(10):
         result = run_round(TestingPlayer(10000), NaivePlayer(10000), False)
         result[-1].check_winner()

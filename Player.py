@@ -1,6 +1,9 @@
 """
 DeepPoker Project
-File for ALL player classes, which represent different playstyles for playing poker
+
+This module contains an abstract class and a few subclasses representing playstyles for a game of poker.
+
+This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah Lee
 """
 from PokerGame import PokerGame, Card
 
@@ -24,7 +27,6 @@ class Player:
         has_raised
         has_folded
         total_bluffs
-        NOTE: GAME TREE HAS NOT BEEN IMPLEMENTED ***
     """
     bet_this_round: int
     balance: int
@@ -53,19 +55,21 @@ class Player:
     def rate_hand(self, hand: list[Card]) -> int:
         """
         Rates how good an initial hand is based on possible poker hands it can make
+        1 - 'button' pair - i.e. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or
+             better
+        2 - non-button pair
+
         Preconditions:
             - player_num == 1 or player_num == 2
-            - the hand is sorted by rank of cards
-        1 - 'button' pair - ie. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or better
-        2 - non-button pair
+            - the hand is sorted by rank of cardss
         """
-        if hand[0][0] == hand[1][0] or hand[0][0] == 1: # same rank; a pair or ace in hand
+        if hand[0][0] == hand[1][0] or hand[0][0] == 1:  # same rank; a pair or ace in hand
             return 1
 
-        if hand[0][1] == hand[1][1]: # same suit
-            if hand[1][0] >= 11: # suited royals = button hand
+        if hand[0][1] == hand[1][1]:  # same suit
+            if hand[1][0] >= 11:  # suited royals = button hand
                 return 1
-        if hand[1][0] == 13 and hand[0][1] >= 6: # unsuited king and six or better
+        if hand[1][0] == 13 and hand[0][1] >= 6:  # unsuited king and six or better
             return 1
         elif hand[1][0] >= 10 and hand[0][0] >= 8:
             return 1
@@ -83,7 +87,11 @@ class Player:
 
     def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
-        returns the win probability
+        Returns the win probability
+
+        Preconditions:
+        - player_num in {1, 2}
+        - game_state is a valid game state of the type of poker we are investigating
         """
         if player_num == 1:
             hand = game_state.player1_hand
@@ -103,8 +111,6 @@ class Player:
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
         Calculates current bet size reasonable to the gamestate.
-        Calculate chance to "scare/provoke" opponents into making mistakes.
-        I think the bet size should also be determined by win probability
         """
         raise NotImplementedError
 
@@ -118,6 +124,7 @@ class Player:
     def move_bet(self, bet: int) -> tuple[int, int]:
         """
         Player bets
+
         Preconditions:
             - bet <= self.balance and bet > 0
         """
@@ -128,6 +135,8 @@ class Player:
     def move_raise(self, betraise: int) -> tuple[int, int]:
         """
         Player raises bet
+
+        Preconditions:
             - betraise <= self.balance and betraise > self.bet_this_round
         """
         self.balance -= (betraise - self.bet_this_round)
@@ -144,6 +153,9 @@ class Player:
     def move_call(self, last_bet: int) -> tuple[int, int]:
         """
         Player calls
+
+        Preconditions:
+        - last_bet is the bet to match in the current game state
         """
         pool_contribution = last_bet - self.bet_this_round
         self.balance -= pool_contribution
@@ -163,13 +175,12 @@ class Player:
 
 class CheckPlayer(Player):
     """
-    Player that checks only checks or folds depending on the current bet
+    Player that checks only checks or folds depending on the current bet.
     """
-
     def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
-        Always checks if there is no bet, and will fold otherwise
-        Will always bet on first turn
+        Always checks if there is no bet, and will fold otherwise.
+        Will always bet on first turn.
         """
         self.has_moved = True
         if game_state.stage == 1 and game_state.last_bet != self.bet_this_round:
@@ -182,7 +193,6 @@ class TestingPlayer(Player):
     """
     Player that exists for the sole purpose of testing the effectiveness of other players.
     """
-
     def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Always bets, calls or checks; never folds or raises
@@ -289,11 +299,11 @@ class ConservativePlayer(Player):
             self.has_moved = True
             win_prob = self.win_probability(game_state, player_num)
             if win_prob >= 0.7:
-                bet_amount = int(self.bet_size(game_state) * 0.5)
+                bet_amount = int(self.bet_size(game_state, win_prob) * 0.5)
                 self.move_bet(bet_amount)
                 return (3, bet_amount)
             elif win_prob >= 0.5:
-                bet_amount = int(self.bet_size(game_state) * 0.25)
+                bet_amount = int(self.bet_size(game_state, win_prob) * 0.25)
                 self.move_bet(bet_amount)
                 return (3, bet_amount)
         else:
@@ -333,7 +343,7 @@ class NaivePlayer(Player):
         4: Raise
         """
         self.has_moved = True
-        if game_state.stage == 1:  # different algorithm for pre-flop
+        if game_state.stage == 1:  # pre-flop strategy: fold on non-btn hands, raise moderately otherwise
             if player_num == 1:
                 hand = list(game_state.player1_hand)
             else:
@@ -350,6 +360,8 @@ class NaivePlayer(Player):
             else:
                 return self.move_call(game_state.last_bet)
 
+        # strategy on other stages: place a bet based on how likely you are to win at the current stage of the game
+        # (relative to other hands)
         win_prob = self.win_probability(game_state, player_num)
         bet_amount = int(self.balance) if win_prob >= 0.95 else int(self.bet_size(game_state, win_prob))
         if bet_amount >= self.balance:
@@ -392,6 +404,9 @@ class NaivePlayer(Player):
 def _generate_card_combos(used_cards: set[Card], cards_so_far: set[Card], level_to_stop: int) -> list[set[Card]]:
     """
     Returns all the possible pairs of cards that have not appeared in used_cards
+
+    Preconditions:
+    - level_to_stop >= 0
     """
     all_pairs = []
     for i in range(1, 14):
@@ -406,3 +421,12 @@ def _generate_card_combos(used_cards: set[Card], cards_so_far: set[Card], level_
                     all_pairs.extend(_generate_card_combos(new_used_cards, new_cards_so_far, level_to_stop))
 
     return all_pairs
+
+
+if __name__ == '__main__':
+    import python_ta
+    python_ta.check_all(config={
+        'extra-imports': ['PokerGame'],  # the names (strs) of imported modules
+        'allowed-io': [],  # the names (strs) of functions that call print/open/input
+        'max-line-length': 120
+    })
