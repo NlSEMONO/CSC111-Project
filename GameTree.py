@@ -34,6 +34,13 @@ class GameTree:
     Each root/node represents a class of action; a way of categorizing the situation/board state in which players made
     their decisions and their responses to the situation.
 
+    instance attributes:
+    - classes_of_actions: the set of classes of actions
+    - subtrees: a dictionary** representing the subtrees for recurssive search
+    - move_condience_value: the "confidence" of winning of this tree path.
+    - good_outcomes_in_route: good outcomes in route.
+    - total_games_in_route: the amount of games in the route.
+
     Represenatation Invariants:
     - not (self.classes_of_action is None) or self.subtrees == {}
     - If the classes of action is an empty set, the tree's current node represents the start of the game, where no moves
@@ -68,6 +75,13 @@ class GameTree:
         Classes of action are based on the player we are 'following' (i.e. player whose information we share)
         NOTE: Classes of action are just a fancy name for tags that accurately describe the situation or event being
         experienced.
+
+        Instance Attributes:
+        - moves: the list of moves
+        - game_states: the list of game_states corresponding to said moves.
+        - following: the player we are following
+        - evaluated: has the move on this round been evaluated
+        - move_number: the current move number we are on.
 
         Preconditions:
         - len(moves) == len(game_states)
@@ -164,6 +178,13 @@ class GameTree:
         When we are not following the player's whose hand we know, classes of action may only contain two items:
         poker hands that can threaten the player who we are following and the type of move that was played.
 
+        Instance Attributes:
+        - move: the move code
+        - game_state: the current game and its corresponding state
+        - following: the player we are following.
+        - evaluated: if the move has been yet evaluated this round. (class of action wise)
+        - evaluate_move: if we need to determine the move
+
         Preconditions:
         - following in {1, 2}
         """
@@ -240,6 +261,9 @@ class GameTree:
         """
         Adds a new subtree to the tree's list of subtrees
 
+        Instance Attributes:
+        - classes_of_actions: the classes of actions set
+
         Preconditions:
         - classes_of_action not in self.subtrees
         """
@@ -250,6 +274,11 @@ class GameTree:
         """
         Determine what kind of poker hand is likely enough to come out for the opponent to be legitimately considered a
         threat.
+
+        Instance Attributes:
+        - game_state: current game state
+        - used_cards: used cards already
+        - current_best: the current best hand
 
         Preconditions:
         - all(card in used_cards for card in game_state.community_cards)
@@ -281,6 +310,11 @@ class GameTree:
         """
         Returns all the possible pairs of cards that have not appeared in used_cards
 
+        Instance attributes:
+        - used_cards: the cards that have already been used.
+        - cards_so_far: the cards in the combo so far
+        - level_to_stop: level of card combo size to stop
+
         Preconditions:
         - level_to_stop >= 0
         """
@@ -301,6 +335,10 @@ class GameTree:
     def insert_row_moves(self, moves: list, current: int = 0) -> None:
         """
         Inserts a row of moves as a down a tree.
+
+        Instance attributes:
+        - moves: the list of moves
+        - current: current index
 
         Preconditions:
         - represents a sequence of nodes to be inserted, delimited by semicolons

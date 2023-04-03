@@ -21,6 +21,13 @@ class NaivePlayer(Player):
         2: Call
         3: Bet
         4: Raise
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
+        Preconditions:
+        - player_num in {1, 2}
         """
         self.has_moved = True
         if game_state.stage == 1: # different algorithm for pre-flop
@@ -64,6 +71,14 @@ class NaivePlayer(Player):
     def win_probability(self, game_state: PokerGame, player_num: int) -> float:
         """
         returns the win probability
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
+        Preconditions:
+        - player_num in {1, 2}
+        - game_state is a valid game state of the type of poker we are investigating
         """
         if player_num == 1:
             hand = game_state.player1_hand
@@ -84,6 +99,13 @@ class NaivePlayer(Player):
         """
         Calculates current bet size reasonable to the gamestate.
         Calculate chance to "scare/provoke" opponents into making mistakes.
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - win_prob_threshold: win_probability thresh hold in decision making.
+
+        Preconditions:
+        - win_prob_threshold >= 0 and win_prob_threshold <= 1
         """
         # Determine a bet size based on the current balance and win probability
         if game_state.stage == 1:
@@ -100,6 +122,15 @@ class NaivePlayer(Player):
 def _generate_card_combos(used_cards: set[Card], cards_so_far: set[Card], level_to_stop: int) -> list[set[Card]]:
     """
     Returns all the possible pairs of cards that have not appeared in used_cards
+
+    Instance attributes:
+    - used_cards: the cards that have already been used.
+    - cards_so_far: the cards in the combo so far
+    - level_to_stop: level of card combo size to stop
+
+    Preconditions:
+    - level_to_stop >= 0
+
     """
     all_pairs = []
     for i in range(1, 14):

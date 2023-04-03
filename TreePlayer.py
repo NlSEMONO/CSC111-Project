@@ -53,7 +53,7 @@ class TreePlayer(Player):
         Initializer for TreePlayer
 
         Preconditions:
-        - balance
+        - balance >= 0
         """
         super().__init__(balance)
         self.new_stage = True
@@ -70,6 +70,10 @@ class TreePlayer(Player):
 
         Will make random moves if the player has not seen the event before, or if it explicitly told to try
         new strategies instead of 'trying' its 'best' to win.
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
 
         Preconditions:
         - game_state is a valid game state of the type of heads up poker we are looking into
@@ -158,6 +162,11 @@ class TreePlayer(Player):
         Helper function for make_move once the player decides on a type of move (exists to avoid code duplication).
         Action is equivalent to the type of move the player chose to make.
 
+        Instance attributes:
+        - game_state: the current game state
+        - action: the action the player chose to make
+        - degree: "degree of action" refer to above for examples. essentially the volitiy of it
+
         Preconditions:
         - game_state is a valid game state of the type of poker we are investigating
         - action in NUM_TO_ACTION
@@ -186,6 +195,11 @@ class TreePlayer(Player):
         """
         Returns an appropriate bet size for a given game state and win probability for a game of poker
 
+        Instance Attributes:
+        - game_state; current game state
+        - win_prob_threshold: the win probability threshold of action corresponding
+        - degree: degree of action -- volitity
+
         Preconditions:
         - game_state is a valid game state of the type of poker we are investigating
         - 0 <= win_prob_threshold <= 1.0
@@ -202,6 +216,9 @@ class TreePlayer(Player):
     def load_game_tree(self, gametree: str) -> GameTree:
         """
         Load in sequences of classes of action to the games this player has 'experienced' from a given input file.
+
+        Instance Attributes:
+        - gametree: the file corresponding to the gametree data needing to be loaded in.
 
         Preconditions:
         - gametree is in the same directory of this file
@@ -228,6 +245,10 @@ def print_to_file(tree: GameTree, destination: str) -> None:
     Writes all sequences of events and confidence statistics for each event to a file.
     Will override ALL existing content in the file.
 
+    Instance attributes:
+    - tree: the gametree corresponding to the data needed to be loaded in
+    - destination: the file destination of the reading
+
     Preconditions:
     - tree only contains valid sequences of classes of action for the type of poker we are investigating.
     """
@@ -241,6 +262,9 @@ def print_to_file(tree: GameTree, destination: str) -> None:
 def _tree_path_to_string(tree: GameTree) -> list[str]:
     """
     Recursively gets all possible paths down a tree as a list of strings.
+
+    Instance Attributes:
+    - tree: the gametree we are reading
 
     Preconditions:
     - tree only contains valid sequences of classes of action for the type of poker we are investigating.

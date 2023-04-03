@@ -113,7 +113,10 @@ class PokerGame:
         """
         Plays a player's move on the board.
 
-        - Preconditions:
+        Instance attributes:
+        - move: the move code for the move being ran
+        - add_to_pool: the amount to add to the pool. negative numbers can be code for other move types.
+
         """
         # add appropriate move to player who played the move
         if self.turn == 0:
@@ -180,6 +183,9 @@ class PokerGame:
     def check_winner(self, all_in: bool = False) -> Optional[int]:
         """
         Checks who the winner is and sets the winner instance attribute appropriately
+
+        Instance attributes:
+        - all_in: if there has been an all_in
         """
         if self.winner is not None:
             return self.winner
@@ -212,6 +218,10 @@ class PokerGame:
     def determine_winner(self, p1_score: Any, p2_score: Any) -> int:
         """
         Returns who the winner is given strength of poker hands and corresponding tie-breaking mechanisms.
+
+        Instance Attributes:
+        - p1_score: the information of the player 1's "score" it is the information needed to determiend the winner,
+        - p2_score: same as p1_score but for p2
 
         Preconditions:
         - p1_score and p2_score both contain the nessecary information to break ties of their 'caliber' of poker hand
@@ -266,6 +276,13 @@ class PokerGame:
         """
         Evaluates if p1_cards or p2_cards are stronger by kickers_allowed kickers. Ignores 'blacklisted' ranks.
 
+        Instance Attributes:
+        - p1_cards: the cards in p1's hand
+        - p2_cards: same as p1_cards but for p2
+        - kickers_allowed:  how many kickers we should consider when evaluating who has better kickers; a kicker is
+        cards that function as tie breakers when two competing poker hands are of the same class/caliber
+        - blacklist: the ranks that are blacklisted from being checked.
+
         Preconditions:
         - p1_cards and p2_cards are sorted in descending order (by rank)
         """
@@ -286,6 +303,9 @@ class PokerGame:
         """
         Returns how 'strong' a poker hand is (lower first number means stronger, higher second number means better
         tiebreaker score)
+
+        Instance Attributes:
+        - hand: the hand of the player
 
         Preconditions:
         - hand is a valid set of cards
@@ -328,6 +348,9 @@ class PokerGame:
         Checks if a straight flush is present inside a list of cards, and if it is, returns the highest card in the
         straight flush.
 
+        Instance Attributes:
+        - cards: the cards being checked if there is a straight flush in that combination.
+
         Preconditions:
         - cards is sorted in ascending order
         """
@@ -348,6 +371,9 @@ class PokerGame:
     def _check_straight(self, cards: list[Card]) -> tuple[bool, int]:
         """
         Checks if a straight is present and returns the highest card in the straight if one is.
+
+        Instance Attributes:
+        - cards: the cards being checked if there is a straight in that combination.
 
         Preconditions:
         - cards is sorted in ascending order
@@ -383,6 +409,9 @@ class PokerGame:
         Checks if a flush is present and returns all the potential cards in the list of input cards that can be used in
         a flush.
 
+        Instance Attributes:
+        - cards: the cards being checked if there is a flush in that combination.
+
         Preconditions:
         - cards is a sorted in ascending order
         """
@@ -405,6 +434,9 @@ class PokerGame:
         """
         Returns tuple representing # of doubles, triples, quadrouples respectively
         (only counts the highest ranked quadrouple/triple and will downgrade lower tier triples/doubles)
+
+        Instance Attributes:
+        - cards: the cards being checked
 
         Preconditions:
         - cards is sorted in ascending order

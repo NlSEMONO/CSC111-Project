@@ -18,15 +18,21 @@ ALL_IN_CODE = 5
 
 class Player:
     """
-    Abstract class representing a player or a playstyle
-        bet_this_round -- how much the player has bet so far in this round.
-        balance
-        betting_percentage -- change for the player to bet "safely"
-        raising_percentage -- chance for the player to raise "safely"
-        has_moved
-        has_raised
-        has_folded
-        total_bluffs
+    Abstract class representing a player or a playstyle.
+
+    Instance Attributes:
+    - bet_this_round: how much the player has bet so far in this round.
+    - balance: players current balance
+    - betting_percentage: chance for the player to bet "safely"
+    - raising_percentage: chance for the player to raise "safely"
+    - has_moved: if the playerh as moved this round.
+    - has_raised: if the player has raised. the player can only raise once
+    - has_folded: if the player has folded.
+    - total_bluffs: Total amount of bluffs a player has made.
+
+    Representational Invariants:
+    - self.bet_this_round <= self.balance and self.bet_this_round >= 0
+    - self.total_bluffs >= 0
     """
     bet_this_round: int
     balance: int
@@ -36,6 +42,9 @@ class Player:
     total_bluffs: int
 
     def __init__(self, balance: int) -> None:
+        """
+        initializer for player class.
+        """
         self.bet_this_round = 0
         self.has_moved = False
         self.has_raised = False
@@ -48,7 +57,11 @@ class Player:
         Makes a move based on the state of the 'board' (game_state) it is given
         The move number correlates to the type of move the player makes.
         Bet is the bet amount.
-        Moves:
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
         """
         raise NotImplementedError
 
@@ -58,6 +71,9 @@ class Player:
         1 - 'button' pair - i.e. ace/king and 6 or better (unsuited)/pair/suited face cards/unsuited 10 and eight or
              better
         2 - non-button pair
+
+        Instance attributes:
+        - hand: the list of cards in the players hand currently.
 
         Preconditions:
             - player_num == 1 or player_num == 2
@@ -89,6 +105,10 @@ class Player:
         """
         Returns the win probability
 
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
         Preconditions:
         - player_num in {1, 2}
         - game_state is a valid game state of the type of poker we are investigating
@@ -111,6 +131,13 @@ class Player:
     def bet_size(self, game_state: PokerGame, win_prob_threshold: float) -> float:
         """
         Calculates current bet size reasonable to the gamestate.
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - win_prob_threshold: win_probability thresh hold in decision making.
+
+        Preconditions:
+        - win_prob_threshold >= 0 and win_prob_threshold <= 1
         """
         raise NotImplementedError
 
@@ -125,6 +152,9 @@ class Player:
         """
         Player bets
 
+        Instance Attributes:
+        bet: amount bet
+
         Preconditions:
             - bet <= self.balance and bet > 0
         """
@@ -135,6 +165,9 @@ class Player:
     def move_raise(self, betraise: int) -> tuple[int, int]:
         """
         Player raises bet
+
+        Instance Attributes:
+        betraise: amount raised
 
         Preconditions:
             - betraise <= self.balance and betraise > self.bet_this_round
@@ -153,6 +186,9 @@ class Player:
     def move_call(self, last_bet: int) -> tuple[int, int]:
         """
         Player calls
+
+        Instance Attributes:
+        last_bet: amount bet by the last player (based on the game_state)
 
         Preconditions:
         - last_bet is the bet to match in the current game state
@@ -181,6 +217,13 @@ class CheckPlayer(Player):
         """
         Always checks if there is no bet, and will fold otherwise.
         Will always bet on first turn.
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
+        Preconditions:
+        - player_num in {1, 2}
         """
         self.has_moved = True
         if game_state.stage == 1 and game_state.last_bet != self.bet_this_round:
@@ -196,6 +239,13 @@ class TestingPlayer(Player):
     def make_move(self, game_state: PokerGame, player_num: int) -> tuple[int, int]:
         """
         Always bets, calls or checks; never folds or raises
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
+        Preconditions:
+        - player_num in {1, 2}
         """
         self.has_moved = True
         if game_state.stage == 1 and self.bet_this_round == 0 and game_state.last_bet == 0:
@@ -225,6 +275,13 @@ class AggressivePlayer(Player):
         2: Call
         3: Bet
         4: Raise
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
+        Preconditions:
+        - player_num in {1, 2}
         """
         win_prob = self.win_probability(game_state, player_num)
         # Determine whether to bet, raise or check
@@ -267,6 +324,9 @@ class AggressivePlayer(Player):
         """
         Calculates current bet size reasonable to the gamestate.
         Calculate chance to "scare/provoke" opponents into making mistakes.
+
+        Preconditions:
+        - win_prob_threshold >= 0 and win_prob_threshold <= 1
         """
         # Determine a bet size based on the current balance and win probability
         bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
@@ -294,6 +354,13 @@ class ConservativePlayer(Player):
         2: Call
         3: Bet
         4: Raise
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
+        Preconditions:
+        - player_num in {1, 2}
         """
         if not self.has_moved:
             self.has_moved = True
@@ -314,6 +381,9 @@ class ConservativePlayer(Player):
         """
         Calculates current bet size reasonable to the gamestate.
         Calculate chance to "scare/provoke" opponents into making mistakes.
+
+        Preconditions:
+        - win_prob_threshold >= 0 and win_prob_threshold <= 1
         """
         # Determine a bet size based on the current balance and win probability
         bet_amount = self.balance * (win_prob_threshold - 0.5) / 0.5
@@ -325,6 +395,7 @@ class NaivePlayer(Player):
     A player that tends to play conservatively and rarely bluffs.
     Only bets/raises if they have a high probability of winning (>= 70%), or a moderately strong hand with a reasonable
      chance of winning (>= 50%). In all other cases, the player will fold.
+     The class of naive player used is naiveplayer.py. This one was a prototype.
     """
 
     def __init__(self, balance: int) -> None:
@@ -341,6 +412,13 @@ class NaivePlayer(Player):
         2: Call
         3: Bet
         4: Raise
+
+        Instance attributes:
+        - game_state: the current game and further state.
+        - player: the player making the move
+
+        Preconditions:
+        - player_num in {1, 2}
         """
         self.has_moved = True
         if game_state.stage == 1:  # pre-flop strategy: fold on non-btn hands, raise moderately otherwise
@@ -388,6 +466,9 @@ class NaivePlayer(Player):
         """
         Calculates current bet size reasonable to the gamestate.
         Calculate chance to "scare/provoke" opponents into making mistakes.
+
+        Preconditions:
+        - win_prob_threshold >= 0 and win_prob_threshold <= 1
         """
         # Determine a bet size based on the current balance and win probability
         if game_state.stage == 1:
@@ -404,6 +485,11 @@ class NaivePlayer(Player):
 def _generate_card_combos(used_cards: set[Card], cards_so_far: set[Card], level_to_stop: int) -> list[set[Card]]:
     """
     Returns all the possible pairs of cards that have not appeared in used_cards
+
+    Instance attributes:
+    - used_cards: the cards that have already been used.
+    - cards_so_far: the cards in the combo so far
+    - level_to_stop: level of card combo size to stop
 
     Preconditions:
     - level_to_stop >= 0
