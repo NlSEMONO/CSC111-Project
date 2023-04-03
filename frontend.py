@@ -107,83 +107,14 @@ class Button:
         return self.rect.collidepoint(pos)
 
 
-# Initialize Pygame
-pygame.init()
-
-screen_width, screen_height = pygame.display.Info().current_w, pygame.display.Info().current_h
-pygame.display.set_caption("Poker Game")
-
-# Calculate the proportional size of the card images based on the screen resolution
-card_width = screen_width // 18
-card_height = int(card_width * 1.4)
-
-# Load card images
-card_back = pygame.transform.scale(pygame.image.load("img/card_back.png"), (card_width, card_height))
-
-card_images = {
-    "(1, 3)": pygame.transform.scale(pygame.image.load("img/Clover/A.png"), (card_width, card_height)),
-    "(2, 3)": pygame.transform.scale(pygame.image.load("img/Clover/2.png"), (card_width, card_height)),
-    "(3, 3)": pygame.transform.scale(pygame.image.load("img/Clover/3.png"), (card_width, card_height)),
-    "(4, 3)": pygame.transform.scale(pygame.image.load("img/Clover/4.webp"), (card_width, card_height)),
-    "(5, 3)": pygame.transform.scale(pygame.image.load("img/Clover/5.png"), (card_width, card_height)),
-    "(6, 3)": pygame.transform.scale(pygame.image.load("img/Clover/6.png"), (card_width, card_height)),
-    "(7, 3)": pygame.transform.scale(pygame.image.load("img/Clover/7.png"), (card_width, card_height)),
-    "(8, 3)": pygame.transform.scale(pygame.image.load("img/Clover/8.png"), (card_width, card_height)),
-    "(9, 3)": pygame.transform.scale(pygame.image.load("img/Clover/9.png"), (card_width, card_height)),
-    "(10, 3)": pygame.transform.scale(pygame.image.load("img/Clover/10.png"), (card_width, card_height)),
-    "(11, 3)": pygame.transform.scale(pygame.image.load("img/Clover/J.jpeg"), (card_width, card_height)),
-    "(12, 3)": pygame.transform.scale(pygame.image.load("img/Clover/Q.jpeg"), (card_width, card_height)),
-    "(13, 3)": pygame.transform.scale(pygame.image.load("img/Clover/K.webp"), (card_width, card_height)),
-
-    "(1, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/A.png"), (card_width, card_height)),
-    "(2, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/2.png"), (card_width, card_height)),
-    "(3, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/3.png"), (card_width, card_height)),
-    "(4, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/4.png"), (card_width, card_height)),
-    "(5, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/5.png"), (card_width, card_height)),
-    "(6, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/6.png"), (card_width, card_height)),
-    "(7, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/7.png"), (card_width, card_height)),
-    "(8, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/8.png"), (card_width, card_height)),
-    "(9, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/9.png"), (card_width, card_height)),
-    "(10, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/10.png"), (card_width, card_height)),
-    "(11, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/J.jpeg"), (card_width, card_height)),
-    "(12, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/Q.png"), (card_width, card_height)),
-    "(13, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/K.png"), (card_width, card_height)),
-
-    "(1, 2)": pygame.transform.scale(pygame.image.load("img/Heart/A.png"), (card_width, card_height)),
-    "(2, 2)": pygame.transform.scale(pygame.image.load("img/Heart/2.png"), (card_width, card_height)),
-    "(3, 2)": pygame.transform.scale(pygame.image.load("img/Heart/3.png"), (card_width, card_height)),
-    "(4, 2)": pygame.transform.scale(pygame.image.load("img/Heart/4.png"), (card_width, card_height)),
-    "(5, 2)": pygame.transform.scale(pygame.image.load("img/Heart/5.png"), (card_width, card_height)),
-    "(6, 2)": pygame.transform.scale(pygame.image.load("img/Heart/6.png"), (card_width, card_height)),
-    "(7, 2)": pygame.transform.scale(pygame.image.load("img/Heart/7.png"), (card_width, card_height)),
-    "(8, 2)": pygame.transform.scale(pygame.image.load("img/Heart/8.png"), (card_width, card_height)),
-    "(9, 2)": pygame.transform.scale(pygame.image.load("img/Heart/9.png"), (card_width, card_height)),
-    "(10, 2)": pygame.transform.scale(pygame.image.load("img/Heart/10.png"), (card_width, card_height)),
-    "(11, 2)": pygame.transform.scale(pygame.image.load("img/Heart/J.jpg"), (card_width, card_height)),
-    "(12, 2)": pygame.transform.scale(pygame.image.load("img/Heart/Q.png"), (card_width, card_height)),
-    "(13, 2)": pygame.transform.scale(pygame.image.load("img/Heart/K.png"), (card_width, card_height)),
-
-    "(1, 1)": pygame.transform.scale(pygame.image.load("img/Spades/A.png"), (card_width, card_height)),
-    "(2, 1)": pygame.transform.scale(pygame.image.load("img/Spades/2.png"), (card_width, card_height)),
-    "(3, 1)": pygame.transform.scale(pygame.image.load("img/Spades/3.png"), (card_width, card_height)),
-    "(4, 1)": pygame.transform.scale(pygame.image.load("img/Spades/4.png"), (card_width, card_height)),
-    "(5, 1)": pygame.transform.scale(pygame.image.load("img/Spades/5.png"), (card_width, card_height)),
-    "(6, 1)": pygame.transform.scale(pygame.image.load("img/Spades/6.png"), (card_width, card_height)),
-    "(7, 1)": pygame.transform.scale(pygame.image.load("img/Spades/7.png"), (card_width, card_height)),
-    "(8, 1)": pygame.transform.scale(pygame.image.load("img/Spades/8.png"), (card_width, card_height)),
-    "(9, 1)": pygame.transform.scale(pygame.image.load("img/Spades/9.png"), (card_width, card_height)),
-    "(10, 1)": pygame.transform.scale(pygame.image.load("img/Spades/10.png"), (card_width, card_height)),
-    "(11, 1)": pygame.transform.scale(pygame.image.load("img/Spades/J.jpg"), (card_width, card_height)),
-    "(12, 1)": pygame.transform.scale(pygame.image.load("img/Spades/Q.png"), (card_width, card_height)),
-    "(13, 1)": pygame.transform.scale(pygame.image.load("img/Spades/K.png"), (card_width, card_height))
-}
-
-
-def run_round2(screen: pygame.Surface, buttons: list[Button], inputs: list[Any],
+def run_round2(infos: list[Any], buttons: list[Button], inputs: list[Any],
                players: list[player.Player], font: pygame.font.Font) -> list[PokerGame]:
     """
     Simulates a round of Poker Game
     """
+    screen = infos[0]
+    card_images = infos[1]
+    card_back = infos[2]
     input_bo = inputs[0]
     input_tex = inputs[1]
     player1 = players[0]
@@ -524,9 +455,79 @@ def frontend(tree_player: TreePlayer) -> PokerGame:
     """
     Creates required variables for a round of poker game simulation and simulates a round of poker game
     """
+    # Initialize Pygame
+    pygame.init()
+
+    screen_width, screen_height = pygame.display.Info().current_w, pygame.display.Info().current_h
+    pygame.display.set_caption("Poker Game")
+
+    # Calculate the proportional size of the card images based on the screen resolution
+    card_width = screen_width // 18
+    card_height = int(card_width * 1.4)
+
+    # Load card images
+    card_back = pygame.transform.scale(pygame.image.load("img/card_back.png"), (card_width, card_height))
+
+    card_images = {
+        "(1, 3)": pygame.transform.scale(pygame.image.load("img/Clover/A.png"), (card_width, card_height)),
+        "(2, 3)": pygame.transform.scale(pygame.image.load("img/Clover/2.png"), (card_width, card_height)),
+        "(3, 3)": pygame.transform.scale(pygame.image.load("img/Clover/3.png"), (card_width, card_height)),
+        "(4, 3)": pygame.transform.scale(pygame.image.load("img/Clover/4.webp"), (card_width, card_height)),
+        "(5, 3)": pygame.transform.scale(pygame.image.load("img/Clover/5.png"), (card_width, card_height)),
+        "(6, 3)": pygame.transform.scale(pygame.image.load("img/Clover/6.png"), (card_width, card_height)),
+        "(7, 3)": pygame.transform.scale(pygame.image.load("img/Clover/7.png"), (card_width, card_height)),
+        "(8, 3)": pygame.transform.scale(pygame.image.load("img/Clover/8.png"), (card_width, card_height)),
+        "(9, 3)": pygame.transform.scale(pygame.image.load("img/Clover/9.png"), (card_width, card_height)),
+        "(10, 3)": pygame.transform.scale(pygame.image.load("img/Clover/10.png"), (card_width, card_height)),
+        "(11, 3)": pygame.transform.scale(pygame.image.load("img/Clover/J.jpeg"), (card_width, card_height)),
+        "(12, 3)": pygame.transform.scale(pygame.image.load("img/Clover/Q.jpeg"), (card_width, card_height)),
+        "(13, 3)": pygame.transform.scale(pygame.image.load("img/Clover/K.webp"), (card_width, card_height)),
+
+        "(1, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/A.png"), (card_width, card_height)),
+        "(2, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/2.png"), (card_width, card_height)),
+        "(3, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/3.png"), (card_width, card_height)),
+        "(4, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/4.png"), (card_width, card_height)),
+        "(5, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/5.png"), (card_width, card_height)),
+        "(6, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/6.png"), (card_width, card_height)),
+        "(7, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/7.png"), (card_width, card_height)),
+        "(8, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/8.png"), (card_width, card_height)),
+        "(9, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/9.png"), (card_width, card_height)),
+        "(10, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/10.png"), (card_width, card_height)),
+        "(11, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/J.jpeg"), (card_width, card_height)),
+        "(12, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/Q.png"), (card_width, card_height)),
+        "(13, 4)": pygame.transform.scale(pygame.image.load("img/Diamond/K.png"), (card_width, card_height)),
+
+        "(1, 2)": pygame.transform.scale(pygame.image.load("img/Heart/A.png"), (card_width, card_height)),
+        "(2, 2)": pygame.transform.scale(pygame.image.load("img/Heart/2.png"), (card_width, card_height)),
+        "(3, 2)": pygame.transform.scale(pygame.image.load("img/Heart/3.png"), (card_width, card_height)),
+        "(4, 2)": pygame.transform.scale(pygame.image.load("img/Heart/4.png"), (card_width, card_height)),
+        "(5, 2)": pygame.transform.scale(pygame.image.load("img/Heart/5.png"), (card_width, card_height)),
+        "(6, 2)": pygame.transform.scale(pygame.image.load("img/Heart/6.png"), (card_width, card_height)),
+        "(7, 2)": pygame.transform.scale(pygame.image.load("img/Heart/7.png"), (card_width, card_height)),
+        "(8, 2)": pygame.transform.scale(pygame.image.load("img/Heart/8.png"), (card_width, card_height)),
+        "(9, 2)": pygame.transform.scale(pygame.image.load("img/Heart/9.png"), (card_width, card_height)),
+        "(10, 2)": pygame.transform.scale(pygame.image.load("img/Heart/10.png"), (card_width, card_height)),
+        "(11, 2)": pygame.transform.scale(pygame.image.load("img/Heart/J.jpg"), (card_width, card_height)),
+        "(12, 2)": pygame.transform.scale(pygame.image.load("img/Heart/Q.png"), (card_width, card_height)),
+        "(13, 2)": pygame.transform.scale(pygame.image.load("img/Heart/K.png"), (card_width, card_height)),
+
+        "(1, 1)": pygame.transform.scale(pygame.image.load("img/Spades/A.png"), (card_width, card_height)),
+        "(2, 1)": pygame.transform.scale(pygame.image.load("img/Spades/2.png"), (card_width, card_height)),
+        "(3, 1)": pygame.transform.scale(pygame.image.load("img/Spades/3.png"), (card_width, card_height)),
+        "(4, 1)": pygame.transform.scale(pygame.image.load("img/Spades/4.png"), (card_width, card_height)),
+        "(5, 1)": pygame.transform.scale(pygame.image.load("img/Spades/5.png"), (card_width, card_height)),
+        "(6, 1)": pygame.transform.scale(pygame.image.load("img/Spades/6.png"), (card_width, card_height)),
+        "(7, 1)": pygame.transform.scale(pygame.image.load("img/Spades/7.png"), (card_width, card_height)),
+        "(8, 1)": pygame.transform.scale(pygame.image.load("img/Spades/8.png"), (card_width, card_height)),
+        "(9, 1)": pygame.transform.scale(pygame.image.load("img/Spades/9.png"), (card_width, card_height)),
+        "(10, 1)": pygame.transform.scale(pygame.image.load("img/Spades/10.png"), (card_width, card_height)),
+        "(11, 1)": pygame.transform.scale(pygame.image.load("img/Spades/J.jpg"), (card_width, card_height)),
+        "(12, 1)": pygame.transform.scale(pygame.image.load("img/Spades/Q.png"), (card_width, card_height)),
+        "(13, 1)": pygame.transform.scale(pygame.image.load("img/Spades/K.png"), (card_width, card_height))
+    }
+
     # Set up the screen
     screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption("Poker Game")
 
     # Create the buttons
     raise_button = Button([340, 700, 100, 50], "Raise")
@@ -542,22 +543,20 @@ def frontend(tree_player: TreePlayer) -> PokerGame:
     human = HumanPlayer(10000)
     p2 = tree_player
     simulated_game = \
-        run_round2(screen, [raise_button, bet_button, fold_button, call_button, check_button], [input_box, input_text],
+        run_round2([screen, card_images, card_back], [raise_button, bet_button, fold_button, call_button, check_button], [input_box, input_text],
                    [human, p2], pygame.font.SysFont(None, 32))[-1]
-
-    # Quit Pygame
-    pygame.quit()
 
     return simulated_game
 
 
-tree_player = TreePlayer(10000)
-frontend(tree_player)
+# Quit Pygame
+pygame.quit()
 
-python_ta.check_all(config={
-    'max-line-length': 120,
-    'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'player', 'poker_game', 'NaivePlayer', 'time'],
-    'allowed-io': ['make_move', 'HumanPlayer', 'run_round2'],
-    'generated-members': ['pygame.*'],
-    'disable': ['E9997', 'E9992']
-})
+#
+# python_ta.check_all(config={
+#     'max-line-length': 120,
+#     'extra-imports': ['pygame', 'random', 'pygame.gfxdraw', 'player', 'poker_game', 'NaivePlayer', 'time'],
+#     'allowed-io': ['make_move', 'HumanPlayer', 'run_round2'],
+#     'generated-members': ['pygame.*'],
+#     'disable': ['E9997', 'E9992']
+# })
