@@ -73,4 +73,5 @@ if __name__ == '__main__':
             p1 = TreePlayer(10000)
             p1.games_played = copy.copy(games_played)
             p1.exploring = False
+            # replace run_round with the new frontend function
             result = run_round(p1, NaivePlayer(10000))

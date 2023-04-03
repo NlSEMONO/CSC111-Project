@@ -16,9 +16,15 @@ from time import sleep
 # Player.Player
 class HumanPlayer(player.Player):
     """
-    Abstract class representing a human player
-        move_button: (name of the move, bet or raise amount if the move is a bet or raise otherwise 0)
-        made_move: whether or not the user has made a move in each stage
+    Class representing a human player
+    Instance Attributes:
+    - move_button: first index is the name of the move and second index is the bet or raise amount, which is 0 if not applicable
+    - made_move: whether or not the user has made a move in each stage
+
+    Represenatation Invariants:
+    - self.move_button[1] >= 0
+    - self.move_button[1] <= self.balance
+    - self.move_buton[0] in ["bet", "check", "call", "raise", "fold"]
     """
     move_button: tuple[str, int]
     made_move: bool
@@ -60,6 +66,19 @@ class HumanPlayer(player.Player):
 
 
 class Button:
+    """
+    Class representing a button for user's move
+    Instance Attributes:
+    - rect: pygame Rect object representing the size and location of the button
+    - text: text on the button
+    - font: font of the text on the button
+    - disabled: whether or not the button click is disabled
+    """
+    rect: pygame.Rect
+    text: str
+    font: pygame.font.Font
+    disabled: bool
+
     def __init__(self, x, y, width, height, text, disabled=False):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
@@ -89,7 +108,7 @@ WINDOW_SIZE = (screen_width, screen_height)
 pygame.display.set_caption("Poker Game")
 
 # Calculate the proportional size of the card images based on the screen resolution
-card_width = screen_width // 13
+card_width = screen_width // 18
 card_height = int(card_width * 1.4)
 
 # Load card images
@@ -391,25 +410,21 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                 b5.draw(screen)
 
                 # Display the cards
-                screen.blit(card_images[player_hand[0]], (500, 600))
-                screen.blit(card_images[player_hand[1]], (550, 600))
-                screen.blit(card_back, (500, 30))
-                screen.blit(card_back, (550, 30))
+                screen.blit(card_images[player_hand[0]], (500, 450))
+                screen.blit(card_images[player_hand[1]], (550, 450))
+                screen.blit(card_back, (500, 10))
+                screen.blit(card_back, (550, 10))
 
                 com_cards = [str(card) for card in game.community_cards]
 
                 if com_cards:
                     for i in range(len(com_cards)):
-                        screen.blit(card_images[com_cards[i]], (440 + i * 50, 310))
-                # for i in range(len(game.community_cards), 5):
-                #     screen.blit(card_back, (200 + i * 10, 100))
+                        screen.blit(card_images[com_cards[i]], (440 + i * 50, 230))
 
-                # Render Player Balances
-                # Create the box to display the string value
                 box_color = (0, 0, 0)
                 box_width = 500
                 box_height = 100
-                box_x = (1600 - box_width)
+                box_x = (1300 - box_width) 
                 box_y = 0
                 box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
 
@@ -423,7 +438,7 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                 box_color = (0, 0, 0)
                 box_width = 500
                 box_height = 70
-                box_x = (1600 - box_width)
+                box_x = (1300 - box_width) 
                 box_y = 50
                 box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
 
@@ -456,19 +471,21 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
     pygame.display.flip()
 
     # Display the user cards
-    screen.blit(card_images[player_hand[0]], (500, 600))
-    screen.blit(card_images[player_hand[1]], (550, 600))
+    screen.blit(card_images[player_hand[0]], (500, 450))
+    screen.blit(card_images[player_hand[1]], (550, 450))
 
     # Display the AI cards
-    ai_cards = [str(card) for card in (game.player2_hand if type(turn_order[0]) == HumanPlayer else game.player1_hand)]
-    screen.blit(card_images[ai_cards[0]], (500, 30))
-    screen.blit(card_images[ai_cards[1]], (550, 30))
+    AI_cards = [str(card) for card in (game.player2_hand if type(turn_order[0]) == HumanPlayer else game.player1_hand)]
+    screen.blit(card_images[AI_cards[0]], (500, 10))
+    screen.blit(card_images[AI_cards[1]], (550, 10))
+    # screen.blit(card_back, (500, 30))
+    # screen.blit(card_back, (550, 30))
 
     com_cards = [str(card) for card in game.community_cards]
 
     if com_cards:
         for i in range(len(com_cards)):
-            screen.blit(card_images[com_cards[i]], (440 + i * 50, 310))
+            screen.blit(card_images[com_cards[i]], (440 + i * 50, 230))
 
     pygame.display.flip()
     sleep(5)
@@ -513,21 +530,22 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
 
 
 # Create the buttons
-raise_button = Button(350, 900, 100, 50, "Raise")
-bet_button = Button(460, 900, 100, 50, "Bet")
-fold_button = Button(570, 900, 100, 50, "Fold")
-call_button = Button(680, 900, 100, 50, "Call")
-check_button = Button(790, 900, 100, 50, "Check")
+raise_button = Button(350, 700, 100, 50, "Raise")
+bet_button = Button(460, 700, 100, 50, "Bet")
+fold_button = Button(570, 700, 100, 50, "Fold")
+call_button = Button(680, 700, 100, 50, "Call")
+check_button = Button(790, 700, 100, 50, "Check")
 
 # Set up the font
 font = pygame.font.SysFont(None, 32)
 
 # Set up the input box
-input_box = pygame.Rect(900, 900, 250, 32)
+input_box = pygame.Rect(900, 700, 250, 32)
 input_text = ''
-player2_box = pygame.Rect(900, 0, 200, 400)
+player2_box = pygame.Rect(900, 700, 200, 400)
 
 clock = pygame.time.Clock()
+
 
 # Set up the game loop
 running = True
