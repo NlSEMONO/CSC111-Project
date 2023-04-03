@@ -10,10 +10,10 @@ This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah
 """
 import copy
 import random
-from Player import Player, NaivePlayer, TestingPlayer
-from GameTree import GameTree, Card
-from PokerGame import PokerGame
-from GameRunner import run_round, NUM_TO_ACTION
+from player import Player, NaivePlayer, TestingPlayer
+from game_tree import GameTree, Card
+from poker_game import PokerGame
+from game_runner import run_round, NUM_TO_ACTION
 
 # Static variables for move constants; consistent across all modules
 FOLD_CODE = 0

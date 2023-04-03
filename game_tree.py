@@ -8,9 +8,9 @@ This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah
 """
 from __future__ import annotations
 from typing import Any, Optional
-from PokerGame import Card, Move, PokerGame, NUM_TO_POKER_HAND, NUM_TO_RANK
-from GameRunner import NUM_TO_ACTION, run_round
-from Player import Player, TestingPlayer, NaivePlayer
+from poker_game import Card, Move, PokerGame, NUM_TO_POKER_HAND, NUM_TO_RANK
+from game_runner import NUM_TO_ACTION, run_round
+from player import Player, TestingPlayer, NaivePlayer
 import copy
 
 # Static variables for what specific integers mean in the context of moves
