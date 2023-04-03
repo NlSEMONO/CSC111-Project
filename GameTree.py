@@ -34,7 +34,7 @@ class GameTree:
     Each root/node represents a class of action; a way of categorizing the situation/board state in which players made
     their decisions and their responses to the situation.
 
-    instance attributes:
+    Instance Attributes:
     - classes_of_actions: the set of classes of actions
     - subtrees: a dictionary** representing the subtrees for recurssive search
     - move_condience_value: the "confidence" of winning of this tree path.
@@ -76,7 +76,7 @@ class GameTree:
         NOTE: Classes of action are just a fancy name for tags that accurately describe the situation or event being
         experienced.
 
-        Instance Attributes:
+        Parameters:
         - moves: the list of moves
         - game_states: the list of game_states corresponding to said moves.
         - following: the player we are following
@@ -114,7 +114,8 @@ class GameTree:
             elif current_state.stage == 5:  # only showdowns can trigger this
                 self.total_games_in_route += 1
                 # won and made decent money
-                if current_state.winner == following + 1 and any(move[0] in {RAISE_CODE, CALL_CODE, BET_CODE} for move in moves):
+                if current_state.winner == following + 1 and any(move[0] in
+                                                                 {RAISE_CODE, CALL_CODE, BET_CODE} for move in moves):
                     self.good_outcomes_in_route += 1
                     self._update_confidence_value()
                     return True
@@ -152,7 +153,10 @@ class GameTree:
                     evaluated = False
             self.total_games_in_route += 1
             # if positive outcome in lower branch
-            if self.subtrees[immutable_actions].insert_moves(moves, game_states, following, evaluated, move_number + (1 if any(any(action in c for c in classes_of_action) for action in list(NUM_TO_ACTION.values())) else 0)):
+            if self.subtrees[immutable_actions].insert_moves(
+                    moves, game_states, following, evaluated,
+                    move_number + (1 if any(any(action in c for c in classes_of_action)
+                                            for action in list(NUM_TO_ACTION.values())) else 0)):
                 self.good_outcomes_in_route += 1
                 self._update_confidence_value()
                 return True
@@ -178,7 +182,7 @@ class GameTree:
         When we are not following the player's whose hand we know, classes of action may only contain two items:
         poker hands that can threaten the player who we are following and the type of move that was played.
 
-        Instance Attributes:
+        Parameters:
         - move: the move code
         - game_state: the current game and its corresponding state
         - following: the player we are following.
@@ -211,12 +215,14 @@ class GameTree:
             if 'High Card' == NUM_TO_POKER_HAND[current_best[0]]:
                 best = [card for card in current_best[1] if card not in game_state.community_cards]
                 best = best[0] if best != [] else -1
-                classes_so_far.add(f'High Card {NUM_TO_RANK[(best[0] - 1) % 13 + 1 ] if isinstance(best, tuple) else "not"} in hand')
+                classes_so_far.add(
+                    f'High Card {NUM_TO_RANK[(best[0] - 1) % 13 + 1 ] if isinstance(best, tuple) else "not"} in hand')
             else:
                 classes_so_far.add(f'{NUM_TO_POKER_HAND[current_best[0]]} in hand')
             # potential poker hands the player can make in later in the game (if lucky)
             if game_state.stage != 4:
-                possible_adds_comm_cards = self._generate_card_combos(used_cards, set(), 4 - len(game_state.community_cards))
+                possible_adds_comm_cards = self._generate_card_combos(used_cards, set(),
+                                                                      4 - len(game_state.community_cards))
 
                 hands = [0] * (current_best[0] + 1)
                 for next_cards in possible_adds_comm_cards:
@@ -240,7 +246,7 @@ class GameTree:
         if not evaluated:
             return classes_so_far
         # Add type of move that was played
-        if following != game_state.turn or evaluated: #acts normally for the opponent
+        if following != game_state.turn or evaluated:  # acts normally for the opponent
             if evaluate_move:
                 if move[0] not in {BET_CODE, RAISE_CODE}:
                     classes_so_far.add(f'{NUM_TO_ACTION[move[0]]}')
@@ -261,7 +267,7 @@ class GameTree:
         """
         Adds a new subtree to the tree's list of subtrees
 
-        Instance Attributes:
+        Parameters:
         - classes_of_actions: the classes of actions set
 
         Preconditions:
@@ -275,7 +281,7 @@ class GameTree:
         Determine what kind of poker hand is likely enough to come out for the opponent to be legitimately considered a
         threat.
 
-        Instance Attributes:
+        Parameters:
         - game_state: current game state
         - used_cards: used cards already
         - current_best: the current best hand
@@ -310,7 +316,7 @@ class GameTree:
         """
         Returns all the possible pairs of cards that have not appeared in used_cards
 
-        Instance attributes:
+        Parameters:
         - used_cards: the cards that have already been used.
         - cards_so_far: the cards in the combo so far
         - level_to_stop: level of card combo size to stop
@@ -336,7 +342,7 @@ class GameTree:
         """
         Inserts a row of moves as a down a tree.
 
-        Instance attributes:
+        Parameters:
         - moves: the list of moves
         - current: current index
 

@@ -5,7 +5,12 @@ This module contains an abstract class and a few subclasses representing playsty
 
 This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah Lee
 """
-from
+import copy
+import random
+from GameTree import GameTree
+from Player import TestingPlayer, NaivePlayer
+from GameRunner import run_round
+from TreePlayer import TreePlayer, print_to_file
 
 if __name__ == '__main__':
     # depending on what you want to do, running this file will do something different
@@ -60,7 +65,8 @@ if __name__ == '__main__':
         # write decision tree result to the target file
         print_to_file(all_games, target_file)
         print('done')
-    elif mode == 'playing':
+    elif mode == 'playing':  # play vs the AI using a given target file
+        # target_file = 'TreePlayer_20000.txt'  # <- play vs our saved state AI by uncommenting this line :)
         tp = TreePlayer(10, target_file)
         games_played = copy.copy(tp.games_played)
         for _ in range(total_games):
@@ -68,6 +74,3 @@ if __name__ == '__main__':
             p1.games_played = copy.copy(games_played)
             p1.exploring = False
             result = run_round(p1, NaivePlayer(10000))
-            result[-1].check_winner()
-            print(f'Player {result[-1].winner} has won the game and {result[-1].pool} currency!')
-            print(result[-1])

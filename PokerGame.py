@@ -113,7 +113,7 @@ class PokerGame:
         """
         Plays a player's move on the board.
 
-        Instance attributes:
+        Parameters:
         - move: the move code for the move being ran
         - add_to_pool: the amount to add to the pool. negative numbers can be code for other move types.
 
@@ -184,7 +184,7 @@ class PokerGame:
         """
         Checks who the winner is and sets the winner instance attribute appropriately
 
-        Instance attributes:
+        Parameters:
         - all_in: if there has been an all_in
         """
         if self.winner is not None:
@@ -219,7 +219,7 @@ class PokerGame:
         """
         Returns who the winner is given strength of poker hands and corresponding tie-breaking mechanisms.
 
-        Instance Attributes:
+        Parameters:
         - p1_score: the information of the player 1's "score" it is the information needed to determiend the winner,
         - p2_score: same as p1_score but for p2
 
@@ -276,11 +276,11 @@ class PokerGame:
         """
         Evaluates if p1_cards or p2_cards are stronger by kickers_allowed kickers. Ignores 'blacklisted' ranks.
 
-        Instance Attributes:
+        Parameters:
         - p1_cards: the cards in p1's hand
         - p2_cards: same as p1_cards but for p2
         - kickers_allowed:  how many kickers we should consider when evaluating who has better kickers; a kicker is
-        cards that function as tie breakers when two competing poker hands are of the same class/caliber
+        cards that function as tiebreakers when two competing poker hands are of the same class/caliber
         - blacklist: the ranks that are blacklisted from being checked.
 
         Preconditions:
@@ -304,7 +304,7 @@ class PokerGame:
         Returns how 'strong' a poker hand is (lower first number means stronger, higher second number means better
         tiebreaker score)
 
-        Instance Attributes:
+        Parameters:
         - hand: the hand of the player
 
         Preconditions:
@@ -348,7 +348,7 @@ class PokerGame:
         Checks if a straight flush is present inside a list of cards, and if it is, returns the highest card in the
         straight flush.
 
-        Instance Attributes:
+        Parameters:
         - cards: the cards being checked if there is a straight flush in that combination.
 
         Preconditions:
@@ -372,7 +372,7 @@ class PokerGame:
         """
         Checks if a straight is present and returns the highest card in the straight if one is.
 
-        Instance Attributes:
+        Parameters:
         - cards: the cards being checked if there is a straight in that combination.
 
         Preconditions:
@@ -409,7 +409,7 @@ class PokerGame:
         Checks if a flush is present and returns all the potential cards in the list of input cards that can be used in
         a flush.
 
-        Instance Attributes:
+        Parameters:
         - cards: the cards being checked if there is a flush in that combination.
 
         Preconditions:
@@ -435,7 +435,7 @@ class PokerGame:
         Returns tuple representing # of doubles, triples, quadrouples respectively
         (only counts the highest ranked quadrouple/triple and will downgrade lower tier triples/doubles)
 
-        Instance Attributes:
+        Parameters:
         - cards: the cards being checked
 
         Preconditions:

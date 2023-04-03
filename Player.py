@@ -58,7 +58,7 @@ class Player:
         The move number correlates to the type of move the player makes.
         Bet is the bet amount.
 
-        Instance attributes:
+        Parameters:
         - game_state: the current game and further state.
         - player: the player making the move
 
@@ -72,7 +72,7 @@ class Player:
              better
         2 - non-button pair
 
-        Instance attributes:
+        Parameters:
         - hand: the list of cards in the players hand currently.
 
         Preconditions:
@@ -105,7 +105,7 @@ class Player:
         """
         Returns the win probability
 
-        Instance attributes:
+        Parameters:
         - game_state: the current game and further state.
         - player: the player making the move
 
@@ -132,7 +132,7 @@ class Player:
         """
         Calculates current bet size reasonable to the gamestate.
 
-        Instance attributes:
+        Parameters:
         - game_state: the current game and further state.
         - win_prob_threshold: win_probability thresh hold in decision making.
 
@@ -152,7 +152,7 @@ class Player:
         """
         Player bets
 
-        Instance Attributes:
+        Parameters:
         bet: amount bet
 
         Preconditions:
@@ -166,7 +166,7 @@ class Player:
         """
         Player raises bet
 
-        Instance Attributes:
+        Parameters:
         betraise: amount raised
 
         Preconditions:
@@ -187,7 +187,7 @@ class Player:
         """
         Player calls
 
-        Instance Attributes:
+        Parameters:
         last_bet: amount bet by the last player (based on the game_state)
 
         Preconditions:
@@ -218,7 +218,7 @@ class CheckPlayer(Player):
         Always checks if there is no bet, and will fold otherwise.
         Will always bet on first turn.
 
-        Instance attributes:
+        Parameters:
         - game_state: the current game and further state.
         - player: the player making the move
 
@@ -240,7 +240,7 @@ class TestingPlayer(Player):
         """
         Always bets, calls or checks; never folds or raises
 
-        Instance attributes:
+        Parameters:
         - game_state: the current game and further state.
         - player: the player making the move
 
@@ -276,7 +276,7 @@ class AggressivePlayer(Player):
         3: Bet
         4: Raise
 
-        Instance attributes:
+        Parameters:
         - game_state: the current game and further state.
         - player: the player making the move
 
@@ -355,7 +355,7 @@ class ConservativePlayer(Player):
         3: Bet
         4: Raise
 
-        Instance attributes:
+        Parameters:
         - game_state: the current game and further state.
         - player: the player making the move
 
@@ -413,7 +413,7 @@ class NaivePlayer(Player):
         3: Bet
         4: Raise
 
-        Instance attributes:
+        Parameters:
         - game_state: the current game and further state.
         - player: the player making the move
 
@@ -486,7 +486,7 @@ def _generate_card_combos(used_cards: set[Card], cards_so_far: set[Card], level_
     """
     Returns all the possible pairs of cards that have not appeared in used_cards
 
-    Instance attributes:
+    Parameters:
     - used_cards: the cards that have already been used.
     - cards_so_far: the cards in the combo so far
     - level_to_stop: level of card combo size to stop

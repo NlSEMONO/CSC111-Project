@@ -18,7 +18,7 @@ def run_round(player1: Player.Player, player2: Player.Player, should_print: bool
     """
     Simulates a round of poker (one game from Pre-flop to showdown)
 
-    Instance Attributes:
+    Parameters:
     - player1: player1's equivalent player
     - player2: player2's equivalent player
     - should_print: if the round should be printed.
