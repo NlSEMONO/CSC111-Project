@@ -20,7 +20,7 @@ if __name__ == '__main__':
     # - if the mode is 'playing', it will use the saved state inside the tree player inside the target file to play a
     #   specified number of games
     # NOTE: IF MODE IS 'playing', THE TARGET FILE MUST EXIST IN THE DIRECTORY THIS FILE IS BEING RUN IN
-    mode = 'learning'
+    mode = 'playing'
     target_file = 'destination.txt'
     # play 100 games so the TA won't have to AFK for a decent game state
     total_games = 100
@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
         # write decision tree result to the target file
         print_to_file(all_games, target_file)
-        print('done')
+        # print('done')
     elif mode == 'playing':  # play vs the AI using a given target file
         # target_file = 'TreePlayer_20000.txt'  # <- play vs our saved state AI by uncommenting this line :)
         tp = TreePlayer(10, target_file)
@@ -74,5 +74,4 @@ if __name__ == '__main__':
             p1 = TreePlayer(10000)
             p1.games_played = copy.copy(games_played)
             p1.exploring = False
-            # replace run_round with the new frontend function
             result = frontend(p1)
