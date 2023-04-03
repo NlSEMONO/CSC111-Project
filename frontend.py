@@ -540,7 +540,7 @@ def frontend(tree_player: TreePlayer) -> PokerGame:
     input_text = ''
 
     human = HumanPlayer(10000)
-    p2 = NaivePlayer(10000)
+    p2 = tree_player
     simulated_game = \
         run_round2(screen, [raise_button, bet_button, fold_button, call_button, check_button], [input_box, input_text],
                    [human, p2], pygame.font.SysFont(None, 32))[-1]
