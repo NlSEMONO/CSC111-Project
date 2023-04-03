@@ -15,6 +15,7 @@ from NaivePlayer import NaivePlayer
 
 from GameRunner import NUM_TO_ACTION, run_round
 
+from time import sleep
 
 
 
@@ -64,13 +65,17 @@ class HumanPlayer(Player.Player):
             return self.move_fold()
 
 class Button:
-    def __init__(self, x, y, width, height, text):
+    def __init__(self, x, y, width, height, text, disabled = False):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.font = pygame.font.Font(None, 32)
+        self.disabled = disabled
 
     def draw(self, surface):
-        pygame.draw.rect(surface, (255, 255, 255), self.rect)
+        if self.disabled:
+            pygame.draw.rect(surface, (128, 128, 128), self.rect)
+        else:
+            pygame.draw.rect(surface, (255, 255, 255), self.rect)
         pygame.draw.rect(surface, (0, 0, 0), self.rect, 2)
         text_surface = self.font.render(self.text, True, (0, 0, 0))
         text_rect = text_surface.get_rect(center=self.rect.center)
@@ -193,7 +198,7 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
     game.last_bet = p2_initial_cost
     game_states_so_far = [game.copy()]
 
-    player_hand = [str(card) for card in game.player1_hand]
+    player_hand = [str(card) for card in (game.player1_hand if type(turn_order[0]) == HumanPlayer else game.player2_hand)]
 
     while game.check_winner() is None:
         print(game.player2_moves, game.player1_moves)
@@ -209,37 +214,64 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                             input_text = input_text[:-1]
                         else:
                             input_text += event.unicode
+
+                    # if game.last_bet = 0, disable call and raise 
+                    # disable betting/check when last_bet != 0
+                    # disable raise if the humanplayer.has_raised
+                    # prevent from betting above balance 
+                    # display balance on screen 
+
                         
                     elif event.type == pygame.MOUSEBUTTONDOWN:
                         # Check if a button was clicked
                         # WARNING: THIS SHOULD BE A RIGHT CLICK, not LEFT CLICK
                         if ((raise_button.is_clicked(event.pos) or bet_button.is_clicked(event.pos)) and (input_text != '' and input_text.isdigit())) or fold_button.is_clicked(event.pos) or call_button.is_clicked(event.pos) or check_button.is_clicked(event.pos):
-                            print('test3', game)
+                            print('BUTTON CLCICKED', game)
                             # reset has_moved
                             human_player.made_move = True
                             human_player.has_moved = True
 
-                            if bet_button.is_clicked(event.pos):
+                            print('human moves: ', human_moves)
+                            print('cpu moves: ', cpu_moves)
+
+                            # disable betting/check when last_bet != 0
+                            # prevent from betting above balance 
+                            if bet_button.is_clicked(event.pos) and game.last_bet == 0 and int(input_text) <= human_player.balance:
                                 if input_text == human_player.balance:
+                                    print("ALL IN")
                                     move = human_player.move_all_in()
                                 else:
+                                    print("BET CLICKED")
                                     move = human_player.move_bet(int(input_text))
 
-                            elif check_button.is_clicked(event.pos):
+                            # disable betting/check when last_bet != 0
+                            elif check_button.is_clicked(event.pos) and game.last_bet == 0:
+                                print("Check last bet", game.last_bet, game.last_bet == 0)
                                 move = human_player.move_check()
-
-                            elif call_button.is_clicked(event.pos):
+                            
+                            # if game.last_bet = 0, disable call and raise 
+                            elif call_button.is_clicked(event.pos) and game.last_bet != 0:
+                                print("CALL")
                                 last_bet = game.last_bet
                                 move = human_player.move_call(last_bet)
-
-                            elif raise_button.is_clicked(event.pos):
+                            
+                            # if game.last_bet = 0, disable call and raise 
+                            # disable raise if the humanplayer.has_raised
+                            elif raise_button.is_clicked(event.pos) and game.last_bet != 0 and not human_player.has_raised and int(input_text) <= human_player.balance:
                                 if input_text == human_player.balance:
+                                    print("ALL-IN")
                                     move = human_player.move_all_in()
                                 else:
+                                    print("RAISED")
                                     move = human_player.move_raise(int(input_text))
 
-                            else:
+                            elif fold_button.is_clicked(event.pos):
+                                print("FOLDED")
                                 move = human_player.move_fold()
+                            
+                            else:
+                                print("YOU CAN'T DO THAT")
+                                human_player.made_move = False
 
                 screen.fill(((0, 85, 0)))
 
@@ -254,18 +286,37 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                 text_surface = font.render(input_text, True, (0, 0, 0))
                 screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
 
+                # Render description of the input text
+                # Render the string
+                text_surface = font.render("Type Bet/Raise Amount", True, (255, 255, 255))
+
+                # Draw the text onto the screen
+                screen.blit(text_surface, (input_box.x, input_box.y - 30))
+
+
                 ### DISPLAYING CPU move 
                 # Define the player moves
-                if type(player1) == HumanPlayer:
-                    cpu_moves = game.player2_moves
-                    human_moves = game.player1_moves
-                    print('cpu: player2', game.player2_moves)
-                    print("Human: Player1 ", game.player1_moves)
+                if type(turn_order[game.turn]) == HumanPlayer:
+                    if game.turn == 0:
+                        cpu_moves = game.player2_moves
+                        human_moves = game.player1_moves
+                    else:
+                        cpu_moves = game.player1_moves
+                        human_moves = game.player2_moves
+                    # print('cpu: player2', game.player2_moves)
+                    # print("Human: Player1 ", game.player1_moves)
                 else: 
-                    cpu_moves = game.player1_moves
-                    human_moves = game.player2_moves
-                    print("cpu: player1 ", game.player1_moves)
-                    print("human: player2 ", game.player2_moves)
+                    if game.turn == 0:
+                        cpu_moves = game.player1_moves
+                        human_moves = game.player2_moves
+                    else:
+                        cpu_moves = game.player2_moves
+                        human_moves = game.player1_moves
+                    # print("cpu: player1 ", game.player1_moves)
+                    # print("human: player2 ", game.player2_moves)
+
+                
+                
                 # Define the text box properties
                 text_box_width = 350
                 text_box_height = len(cpu_moves) * font.get_linesize()
@@ -313,11 +364,52 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                     text = font.render(display, True, text_color)
                     text_box_surface.blit(text, (150, i * font.get_linesize()))
 
+                # RENDER Move History Description
+                # Render the string with white font color
+                text_surface_AI = font.render("AI", True, (255, 255, 255))
+                text_surface_user = font.render("USER", True, (255, 255, 255))
+
+                # Draw the text onto the screen
+                screen.blit(text_surface_AI, (130, 70))
+                screen.blit(text_surface_user, (280, 70))
+
                 # # Draw the text box onto the screen
                 screen.blit(text_box_surface, (text_box_x, text_box_y))
 
+
+                # if game.last_bet = 0, disable call and raise 
+                # disable betting/check when last_bet != 0
+                # disable raise if the humanplayer.has_raised
+                # prevent from betting above balance 
+                # display balance on screen
+                
+                # raise_button = Button(350, 900, 100, 50, "Raise")
+                # bet_button = Button(460, 900, 100, 50, "Bet")
+                # fold_button = Button(570, 900, 100, 50, "Fold")
+                # call_button = Button(680, 900, 100, 50, "Call")
+                # check_button = Button(790, 900, 100, 50, "Check")
+                if game.last_bet == 0:
+                    raise_button.disabled = True
+                    call_button.disabled = True
+                    bet_button.disabled = False
+                    check_button.disabled = False
+
+                else:  # if game.last_bet != 0:
+                    bet_button.disabled = True
+                    check_button.disabled = True
+                    raise_button.disabled = False
+                    call_button.disabled = False
+
+                if human_player.has_raised:
+                    raise_button.disabled = True
+                else:
+                    raise_button.disabled = False
+                    
+
+                # TODO: enable these 
+
+
                 # Draw the buttons
-                # TODO: change bet to raise after first bet
                 b1.draw(screen)
                 b2.draw(screen)
                 b3.draw(screen)
@@ -330,8 +422,6 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                 screen.blit(card_back, (500, 30))
                 screen.blit(card_back, (550, 30))
 
-                # Display community cards
-                # print(game.community_cards)
                 com_cards = [str(card) for card in game.community_cards]
 
                 if com_cards:
@@ -340,6 +430,35 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
                 # for i in range(len(game.community_cards), 5):
                 #     screen.blit(card_back, (200 + i * 10, 100))
 
+                # Render Player Balances
+                # Create the box to display the string value
+                box_color = (0, 0, 0)
+                box_width = 500
+                box_height = 100
+                box_x = (1600 - box_width) 
+                box_y = 0
+                box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+
+                # Render the string value
+                balance_text = font.render("User: " + str(human_player.balance), True, (255, 255, 255))
+
+                # Draw the box and the string value
+                pygame.draw.rect(screen, box_color, box_rect)
+                screen.blit(balance_text, (box_x + 20, box_y + 20))
+
+                box_color = (0, 0, 0)
+                box_width = 500
+                box_height = 70
+                box_x = (1600 - box_width) 
+                box_y = 50
+                box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+
+                # Render the string value
+                balance_text = font.render("AI: " + str(human_player.balance), True, (255, 255, 255))
+
+                # Draw the box and the string value
+                pygame.draw.rect(screen, box_color, box_rect)
+                screen.blit(balance_text, (box_x + 20, box_y + 20))
                 pygame.display.flip()
             human_player.made_move = False
 
@@ -347,7 +466,7 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
             move = turn_order[game.turn].make_move(game, corresponding_hand[game.turn])
         # print(f'[{game.stage}] Player {game.turn + 1} {NUM_TO_ACTION[move[0]]}s{"" if move[0] in {Player.FOLD_CODE, Player.CHECK_CODE, Player.CALL_CODE, Player.ALL_IN_CODE} else " "+str(move[1])}')
 
-        print(move[1])
+        # print(move[1])
         game.run_move(move, move[1] - invested_initially if game.stage == 1 else -1)
         if (move[0] == Player.RAISE_CODE or (move[0] == Player.BET_CODE and move[1] > 0) or move[0] == Player.ALL_IN_CODE) and turn_order[game.turn].balance > 0:
             turn_order[game.turn].has_moved = False  # must move again if raise occurs
@@ -360,60 +479,69 @@ def run_round2(screen, b1, b2, b3, b4, b5, input_box, input_text, player2_box, p
             turn_order[1].reset_player()
             game.last_bet = 0
         game_states_so_far.append(game.copy())
+    
+    screen.fill((0, 0, 0))
+    pygame.display.flip()
 
-        screen.fill(((0, 85, 0)))
+    # Display the user cards
+    screen.blit(card_images[player_hand[0]], (500, 600))
+    screen.blit(card_images[player_hand[1]], (550, 600))
 
-        # TODO: Display game.player2_moves
+    # Display the AI cards
+    AI_cards = [str(card) for card in (game.player2_hand if type(turn_order[0]) == HumanPlayer else game.player1_hand)]
+    screen.blit(card_images[AI_cards[0]], (500, 30))
+    screen.blit(card_images[AI_cards[1]], (550, 30))
+    # screen.blit(card_back, (500, 30))
+    # screen.blit(card_back, (550, 30))
 
-        # Set the background color of the input_box
-        background_color = (255, 255, 255) # WHite
-        pygame.draw.rect(screen, background_color, input_box)
+    com_cards = [str(card) for card in game.community_cards]
 
-        # # Render the input text
-        # text_surface = font.render(input_text, True, (0, 0, 0))
-        # screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
-
-        # Draw the buttons
-        # TODO: change bet to raise after first bet
-        b1.draw(screen)
-        b2.draw(screen)
-        b3.draw(screen)
-        b4.draw(screen)
-        b5.draw(screen)
-
-# if game.last_bet = 0, disable call and raise 
-# disable betting/check when last_bet != 0
-# disable raise if the humanplayer.has_raised
-# prevent from betting above balance 
-# display balance on screen 
-
-# on turn_order position 0, 
-
-        # player_hand2 = game.player1_hand
-        # print(player_hand2)
-
-        # Display the cards
-        screen.blit(card_images[player_hand[0]], (500, 600))
-        screen.blit(card_images[player_hand[1]], (550, 600))
-        screen.blit(card_back, (500, 30))
-        screen.blit(card_back, (550, 30))
-        
-
-        pygame.display.flip()
-    if game.winner == 1:  # player1 wins
-        print(type(player1), type(player1) == HumanPlayer, game.winner)
-        # if type(player1) == HumanPlayer:
-        #     print('winner: human', 'game.winner: ', game.winner, type(player1))
-        # else:
-        #     print('winner: CPU', 'game.winner: ', game.winner, type(player1))
-    else:
-        print(type(player2), type(player2) == HumanPlayer, game.winner)
-        # if type(player2) == HumanPlayer:
-        #     print('winner: human', 'game.winner: ', game.winner, type(player2))
-        # else:
-        #     print('winner: CPU', 'game.winner: ', game.winner, type(player2))
+    if com_cards:
+        for i in range(len(com_cards)):
+            screen.blit(card_images[com_cards[i]], (440 + i * 50, 310))
     
 
+    pygame.display.flip()
+    sleep(5)
+
+    screen.fill((0, 0, 0))
+
+    if game.winner == 3:
+        print("tie")
+        text_surface = font.render('TIE!', True, (255, 255, 255))
+        # Draw the text onto the screen
+        screen.blit(text_surface, (600, 400))
+
+        
+    elif type(turn_order[game.winner - 1]) == HumanPlayer:
+        print('winner: human', 'game.winner: ', game.winner, type(player1))
+
+        index_of_winner = game.winner - 1
+        if index_of_winner == 1:  # then AI player is in index 1 meaning player 2
+            if len(game.player1_moves) == 1:
+                text_surface = font.render('You Won Because the Opponent Folded!', True, (255, 255, 255))
+                screen.blit(text_surface, (400, 400))
+        else:
+            text_surface = font.render('You Won!', True, (255, 255, 255))
+            screen.blit(text_surface, (600, 400))
+        
+    else:
+        print('winner: CPU', 'game.winner: ', game.winner, type(player1))
+        text_surface = font.render('You Lost :(', True, (255, 255, 255))
+
+        # Draw the text onto the screen
+        screen.blit(text_surface, (600, 400))
+        
+
+    pygame.display.flip()
+    sleep(5)
+
+    raise_button.disabled = False
+    bet_button.disabled = False
+    fold_button.disabled = False
+    call_button.disabled = False
+    check_button.disabled = False
+    
     return game_states_so_far
 
 # Create the buttons
@@ -427,7 +555,7 @@ check_button = Button(790, 900, 100, 50, "Check")
 font = pygame.font.SysFont(None, 32)
 
 # Set up the input box
-input_box = pygame.Rect(900, 900, 200, 32)
+input_box = pygame.Rect(900, 900, 250, 32)
 input_text = ''
 player2_box = pygame.Rect(900, 0, 200, 400)
 
@@ -441,116 +569,6 @@ simulated_game = run_round2(screen, raise_button, bet_button, fold_button, call_
 
 font = pygame.font.SysFont(None, 32)
 
-
-
-
-print('testtttttt123123123')
-while running:
-    # Handle event
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-        # user text input box
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                input_text = input_text[:-1]
-            else:
-                input_text += event.unicode
-            print(input_text)
-
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            # Check if a button was clicked
-            # WARNING: THIS SHOULD BE A RIGHT CLICK, not LEFT CLICK
-            if raise_button.is_clicked(event.pos):
-                # Handle raise button click
-                if input_text != '' and input_text.isdigit():
-                    # Handle raise button click
-                    human.move_button = ("raise", int(input_text))
-                    print(human.move_button)
-                    human.has_moved = True
-
-            elif bet_button.is_clicked(event.pos):
-                # Handle bet button click
-                if input_text != '' and input_text.isdigit():
-                    # Handle raise button click
-                    human.move_button = ("bet", int(input_text))
-                    print(human.move_button)
-                    human.has_moved = True
-
-            elif fold_button.is_clicked(event.pos):
-                # Handle fold button click
-                human.move_button = ("fold", 0)
-                print(human.move_button)
-                print('test')
-                human.has_moved = True
-
-            elif call_button.is_clicked(event.pos):
-                # Handle fold button click
-                human.move_button = ("call", 0)
-                print(human.move_button)
-                human.has_moved = True
-
-            elif check_button.is_clicked(event.pos):
-                # Handle fold button click
-                human.move_button = ("check", 0)
-                print(human.move_button)
-                human.has_moved = True
-
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                user_input = user_input[:-1]
-            else:
-                user_input += event.unicode
-
-
-
-
-    # Draw the screen
-    # screen.fill(bg_color)
-    # Draw the cards, chips, and other game elements here
-
-    # Clear the screen
-    screen.fill((0, 85, 0))
-
-   # Set the outline color of the input_box
-    outline_color = (255, 0, 0) # Red
-    pygame.draw.rect(screen, outline_color, input_box, 2)
-
-    # Set the background color of the input_box
-    background_color = (0, 255, 0) # Green
-    pygame.draw.rect(screen, background_color, input_box)
-
-
-
-    # Render the input text
-    text_surface = font.render(input_text, True, (0, 0, 0))
-    screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
-
-    # Draw the buttons
-    # TODO: change bet to raise after first bet
-    raise_button.draw(screen)
-    bet_button.draw(screen)
-    fold_button.draw(screen)
-    call_button.draw(screen)
-    check_button.draw(screen)
-
-    # Display the cards
-    # screen.blit(card_images[player_hand[0]], (500, 500))
-    # screen.blit(card_images[player_hand[1]], (550, 500))
-    # screen.blit(card_back, (500, 30))
-    # screen.blit(card_back, (550, 30))
-
-    # Update the screen
-    # pygame.display.update()
-    # TODO: Display the community cards (smaller than user cards)
-    # game.community_cards (after each turn)
-
-    # pygame.display.flip()
-
-    # Update the game display
-    pygame.display.flip()
-    # clock.tick(30)
 
 # Quit Pygame
 pygame.quit()
