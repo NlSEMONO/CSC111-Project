@@ -7,10 +7,10 @@ This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah
 """
 import copy
 import random
-from GameTree import GameTree
-from Player import TestingPlayer, NaivePlayer
-from GameRunner import run_round
-from TreePlayer import TreePlayer, print_to_file
+from game_tree import GameTree
+from player import TestingPlayer, NaivePlayer
+from game_runner import run_round
+from tree_player import TreePlayer, print_to_file
 
 if __name__ == '__main__':
     # depending on what you want to do, running this file will do something different

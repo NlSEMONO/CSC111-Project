@@ -6,8 +6,8 @@ and with no restrictions on raise values.
 
 This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah Lee
 """
-from PokerGame import PokerGame
-import Player
+from poker_game import PokerGame
+import player
 import random
 
 NUM_TO_ACTION = {Player.FOLD_CODE: 'Fold', Player.CHECK_CODE: 'Check', Player.CALL_CODE: 'Call',

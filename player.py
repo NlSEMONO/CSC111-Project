@@ -5,7 +5,7 @@ This module contains an abstract class and a few subclasses representing playsty
 
 This file is Copyright (c) 2023 Francis Madarang, Sungjin Hong, Sean Kwee, Yenah Lee
 """
-from PokerGame import PokerGame, Card
+from poker_game import PokerGame, Card
 
 # STATICS FOR MOVE CODES
 FOLD_CODE = 0
